@@ -1,0 +1,29 @@
+node_modules/
+dist/
+dist-ssr/
+*.local
+.DS_Store
+
+# Test / tooling output
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+coverage/
+tests/visual/**/*-actual.png
+tests/visual/**/*-diff.png
+
+# Generated artefacts (reproducible via scripts)
+.tts-cache/
+benchmark-results/
+*.tsbuildinfo
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Env
+.env
+.env.local
+.env.*.local

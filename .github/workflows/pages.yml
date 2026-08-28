@@ -1,0 +1,91 @@
+name: Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never run two deploys at once, but do not cancel an in-flight deploy either:
+# a half-applied Pages update can serve an index.html referencing chunks that
+# no longer exist.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build and validate
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Deployment gates. A build that fails any of these must not reach Pages,
+      # because the Pages URL is the primary Android playtest channel.
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Unit and integration tests
+        run: pnpm test
+
+      - name: Validate assets and content
+        run: pnpm lint:assets
+
+      - name: Production build
+        run: pnpm build
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install chromium --with-deps
+
+      # Critical smoke test: the built artefact must actually boot and reach the
+      # title screen with no fatal console errors before we publish it.
+      - name: Boot smoke test
+        run: pnpm exec playwright test tests/browser/boot.spec.ts --project=desktop-chromium
+
+      - name: Upload smoke-test report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pages-smoke-report
+          path: playwright-report/
+          retention-days: 7
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Report deployed URL
+        run: |
+          echo "Deployed to ${{ steps.deployment.outputs.page_url }}"
+          echo "Commit ${GITHUB_SHA}"

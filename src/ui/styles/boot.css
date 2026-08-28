@@ -1,0 +1,175 @@
+/*
+ * Boot / loading screen.
+ *
+ * Reads as equipment powering up and reporting status, not a spinner on a
+ * gradient. Progress lines are real stage names so a stall is diagnosable
+ * from a screenshot on a phone.
+ */
+
+.boot {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-boot);
+  display: grid;
+  grid-template-rows: 1fr auto;
+  padding: calc(var(--space-6) + var(--safe-top)) calc(var(--space-6) + var(--safe-right))
+    calc(var(--space-6) + var(--safe-bottom)) calc(var(--space-6) + var(--safe-left));
+  background: var(--c-surface-0);
+  /* Faint horizontal banding: painted concrete, not a colour gradient. */
+  background-image: repeating-linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.012) 0px,
+    rgba(255, 255, 255, 0.012) 1px,
+    transparent 1px,
+    transparent 4px
+  );
+  transition: opacity var(--dur-slow) var(--ease-out);
+}
+
+.boot--dismissed {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.boot__identity {
+  align-self: center;
+  justify-self: start;
+  max-width: 44rem;
+}
+
+.boot__wordmark {
+  margin: 0;
+  font-family: var(--font-label);
+  font-weight: 700;
+  font-size: clamp(2.5rem, 11vw, 5.5rem);
+  line-height: 0.92;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--c-text-primary);
+}
+
+/* A single amber rule under the wordmark: a painted line on steel. */
+.boot__rule {
+  width: clamp(120px, 34vw, 320px);
+  height: 3px;
+  margin: var(--space-4) 0 var(--space-3);
+  background: var(--c-signal-amber);
+}
+
+.boot__subtitle {
+  margin: 0;
+  font-family: var(--font-label);
+  font-size: calc(var(--fs-small) * var(--a11y-text-scale));
+  letter-spacing: var(--tracking-stencil);
+  text-transform: uppercase;
+  color: var(--c-text-muted);
+}
+
+.boot__status {
+  display: grid;
+  gap: var(--space-3);
+}
+
+/* Stage list, progress track and build plate share one column width so their
+   left and right edges line up. */
+.boot__panel {
+  display: grid;
+  gap: var(--space-4);
+  width: 100%;
+  max-width: 42rem;
+}
+
+.boot__stage {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--fs-small);
+  color: var(--c-text-secondary);
+}
+
+.boot__stage-index {
+  color: var(--c-text-muted);
+}
+
+.boot__stage-label {
+  flex: 1;
+}
+
+.boot__stage-state {
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.boot__stage--pending .boot__stage-state {
+  color: var(--c-text-muted);
+}
+.boot__stage--active .boot__stage-state {
+  color: var(--c-signal-amber);
+}
+.boot__stage--done .boot__stage-state {
+  color: var(--c-nominal);
+}
+.boot__stage--failed .boot__stage-state {
+  color: var(--c-fault);
+}
+
+/* Progress track reads like a level gauge. */
+.boot__track {
+  position: relative;
+  height: 4px;
+  background: var(--c-surface-2);
+  overflow: hidden;
+}
+
+.boot__fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0%;
+  background: var(--c-signal-amber);
+  transition: width var(--dur-base) var(--ease-out);
+}
+
+.boot__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  color: var(--c-text-muted);
+}
+
+/* ---- Fatal boot failure ------------------------------------------------
+   If the engine cannot start, say exactly what failed. A blank screen or a
+   spinner that never resolves is not acceptable. */
+
+.boot__error {
+  border-left: 3px solid var(--c-fault);
+  padding: var(--space-4);
+  background: var(--c-fault-wash);
+  display: grid;
+  gap: var(--space-3);
+}
+
+.boot__error-title {
+  font-family: var(--font-label);
+  font-weight: 700;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--c-fault);
+}
+
+.boot__error-detail {
+  font-family: var(--font-mono);
+  font-size: var(--fs-small);
+  color: var(--c-text-secondary);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 30vh;
+  overflow-y: auto;
+}
+
+.boot__error-hint {
+  font-size: var(--fs-small);
+  color: var(--c-text-secondary);
+}
