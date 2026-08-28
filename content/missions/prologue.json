@@ -1,0 +1,177 @@
+{
+  "id": "prologue_before_the_waterline",
+  "title": "Before the Waterline",
+  "act": "prologue",
+  "summary": "P0 depot calibration and P1 service bridge. Movement, camera and one interaction are taught by doing them; Ivo is met while he is working; Sera is established over radio and the 'current map' question is planted. Ends with Mara crossing into the sealed zone. The 37-minute gap is not mentioned.",
+  "entryObjective": "prologue.reach-clinic-bay",
+  "objectives": [
+    {
+      "id": "prologue.reach-clinic-bay",
+      "title": "Find Ivo in the clinic bay",
+      "description": "Ivo Saye runs the field clinic out of the depot's west bay. He asked for a technician, not a courier.",
+      "kind": "primary",
+      "activation": { "kind": "always" },
+      "completion": { "kind": "sceneSeen", "sceneId": "prologue_depot" },
+      "markers": [
+        {
+          "position": { "x": -14.5, "y": 0.2, "z": 6.0 },
+          "label": "Clinic bay",
+          "sectorId": "depot_platform",
+          "radius": 2.5
+        }
+      ],
+      "hints": [
+        {
+          "text": "The bay is under the departures board, at the west end of the platform.",
+          "afterSeconds": 60
+        }
+      ],
+      "next": "prologue.log-clinic-feed",
+      "checkpoint": "on-activate",
+      "testHook": "prologue.depot_wake"
+    },
+    {
+      "id": "prologue.log-clinic-feed",
+      "title": "Read the meter on Feeder Three",
+      "description": "The contractor's readout says the transfer to the clinic is clean. Ivo wants a second number from someone who has read a meter before.",
+      "kind": "primary",
+      "activation": { "kind": "flagSet", "flag": "ivo_briefed_mara" },
+      "completion": { "kind": "flagSet", "flag": "clinic_feed_logged" },
+      "markers": [
+        {
+          "position": { "x": -11.0, "y": 1.2, "z": 9.4 },
+          "label": "Feeder Three meter",
+          "sectorId": "depot_platform",
+          "radius": 1.6
+        }
+      ],
+      "hints": [
+        {
+          "text": "The meter is mounted beside the bay door, at head height.",
+          "afterSeconds": 45
+        },
+        {
+          "text": "Stand square to the panel. The glass is scratched and only reads from the front.",
+          "afterSeconds": 90
+        }
+      ],
+      "next": "prologue.collect-pulse-tool",
+      "checkpoint": "none",
+      "testHook": "prologue.clinic_feed"
+    },
+    {
+      "id": "prologue.collect-pulse-tool",
+      "title": "Take the pulse tool from the contractor crate",
+      "description": "Holt left a maintenance pulse tool at stanchion four, in the grey case. Nothing in the sealed zone answers a hand signal.",
+      "kind": "primary",
+      "activation": { "kind": "flagSet", "flag": "clinic_feed_logged" },
+      "completion": { "kind": "flagSet", "flag": "pulse_tool_issued" },
+      "markers": [
+        {
+          "position": { "x": -2.0, "y": 0.2, "z": 8.8 },
+          "label": "Contractor crate, stanchion four",
+          "sectorId": "depot_platform",
+          "radius": 1.8
+        }
+      ],
+      "next": "prologue.climb-to-overlook",
+      "checkpoint": "on-complete",
+      "testHook": "prologue.pulse_tool"
+    },
+    {
+      "id": "prologue.climb-to-overlook",
+      "title": "Climb to the upper platform",
+      "description": "The service ladder at the east end reaches the upper platform and the head of the service bridge.",
+      "kind": "primary",
+      "activation": { "kind": "flagSet", "flag": "pulse_tool_issued" },
+      "completion": { "kind": "flagSet", "flag": "reached_depot_overlook" },
+      "markers": [
+        {
+          "position": { "x": 12.5, "y": 4.6, "z": 10.2 },
+          "label": "Service ladder",
+          "sectorId": "depot_platform",
+          "radius": 2.0
+        }
+      ],
+      "hints": [
+        {
+          "text": "The ladder is bolted to the lift housing, past the parked bus.",
+          "afterSeconds": 60
+        }
+      ],
+      "next": "prologue.cross-service-bridge",
+      "checkpoint": "on-complete",
+      "testHook": "prologue.overlook"
+    },
+    {
+      "id": "prologue.cross-service-bridge",
+      "title": "Cross the service bridge into the sealed zone",
+      "description": "The north mouth gate lifts by hand. It is rated for two people and there is one of her.",
+      "kind": "primary",
+      "activation": { "kind": "flagSet", "flag": "sera_first_task_given" },
+      "completion": { "kind": "flagSet", "flag": "crossed_service_bridge" },
+      "markers": [
+        {
+          "position": { "x": 27.0, "y": 4.4, "z": 12.0 },
+          "label": "Service bridge, north mouth",
+          "sectorId": "depot_platform",
+          "radius": 3.0
+        }
+      ],
+      "hints": [
+        {
+          "text": "The walkway is out for two metres at the mouth. The handrail is not.",
+          "afterSeconds": 75
+        },
+        {
+          "text": "Take the strain on the gate slowly, then get under it and through.",
+          "afterSeconds": 140
+        }
+      ],
+      "next": null,
+      "checkpoint": "both",
+      "testHook": "prologue.bridge"
+    },
+    {
+      "id": "prologue.read-evacuation-board",
+      "title": "Read the evacuation notice board",
+      "description": "Three days of amendments in four different hands, over a printed sheet that was current on the first night.",
+      "kind": "optional",
+      "activation": { "kind": "always" },
+      "completion": { "kind": "flagSet", "flag": "read_evacuation_board" },
+      "markers": [
+        {
+          "position": { "x": -18.0, "y": 1.4, "z": 2.5 },
+          "label": "Evacuation notice board",
+          "sectorId": "depot_platform",
+          "radius": 1.5
+        }
+      ],
+      "next": null,
+      "branchFrom": "prologue.reach-clinic-bay",
+      "checkpoint": "none",
+      "testHook": "prologue.evac_board"
+    },
+    {
+      "id": "prologue.count-shelter-batteries",
+      "title": "Count the spare batteries on the shelter shelf",
+      "description": "Ivo's four includes one that overstates its charge. A written count is worth more to him than his own memory of it.",
+      "kind": "optional",
+      "activation": { "kind": "flagSet", "flag": "ivo_briefed_mara" },
+      "completion": { "kind": "flagSet", "flag": "depot_battery_count_logged" },
+      "markers": [
+        {
+          "position": { "x": -9.5, "y": 0.9, "z": 2.0 },
+          "label": "Shelter battery shelf",
+          "sectorId": "depot_platform",
+          "radius": 1.5
+        }
+      ],
+      "next": null,
+      "branchFrom": "prologue.log-clinic-feed",
+      "checkpoint": "none",
+      "testHook": "prologue.battery_log",
+      "onComplete": [{ "kind": "adjustTrust", "character": "ivo", "delta": 1 }]
+    }
+  ]
+}

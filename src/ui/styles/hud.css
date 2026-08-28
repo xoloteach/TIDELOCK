@@ -1,0 +1,403 @@
+/*
+ * Gameplay HUD.
+ *
+ * Composition: an objective slip printed top-left, an equipment readout rail
+ * top-right, and one interaction prompt low-centre. Everything is a flat panel
+ * with square corners, a hairline border and a single amber rule — the same
+ * language as the boot screen and the title menu.
+ *
+ * Deliberately NOT: a holographic overlay, a glowing reticle, rounded
+ * translucent cards, coloured glow, or a permanent quest log. Colour carries
+ * meaning (amber = act on this, green = nominal, red = fault) and nothing else.
+ *
+ * ---- Bottom-edge reservation -------------------------------------------
+ *
+ * The three bottom layers must never overlap. From the bottom up:
+ *
+ *   [safe-bottom] [--hud-touch-zone] [--hud-subtitle-band] [prompt]
+ *
+ * `--hud-touch-zone` is the height the touch control layer owns in the bottom
+ * corners (joystick left, action cluster right). `--hud-subtitle-band` is the
+ * height `subtitles.css` may occupy above it. The interaction prompt is then
+ * lifted clear of both. The reservation is declared here because the HUD is the
+ * layer that has to stay out of the way of the other two, and `subtitles.css`
+ * reads these values with fallbacks so it works if loaded alone.
+ *
+ * The reservation is not gated on `pointer: coarse`. One geometry on every
+ * device means one layout to review and one screenshot to check, and the
+ * desktop cost is dead space at the bottom of the frame, which is where the
+ * least information is anyway.
+ */
+
+:root {
+  /* Bottom corners owned by the touch control layer. */
+  --hud-touch-zone: clamp(112px, 34vh, 176px);
+  /* Band available to subtitles, immediately above the touch zone. */
+  --hud-subtitle-band: clamp(52px, 15vh, 82px);
+  /* Prompt baseline: clear of both, plus a gap so they never visually merge. */
+  --hud-prompt-lift: calc(
+    var(--hud-touch-zone) + var(--hud-subtitle-band) + var(--space-3)
+  );
+}
+
+.hud {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-hud);
+  /* Every child is a readout. Input belongs to the touch control layer. */
+  pointer-events: none;
+  opacity: var(--a11y-ui-opacity);
+  font-family: var(--font-label);
+}
+
+/*
+ * Groups are hidden with the `hidden` attribute, which the UA sheet implements
+ * as `display: none` — a specificity of zero that loses to the `display: grid`
+ * and `display: flex` rules below. This restores it.
+ */
+.hud [hidden] {
+  display: none;
+}
+
+/* ---- Objective slip ----------------------------------------------------
+   Appears on change and fades back. Left amber rule, printed kicker, one
+   line of concrete instruction. No icon, no progress ring, no counter. */
+
+.hud__objective {
+  position: absolute;
+  top: calc(var(--safe-top) + var(--space-4));
+  left: calc(var(--safe-left) + var(--space-5));
+  display: grid;
+  gap: var(--space-1);
+  max-width: min(28rem, 46vw);
+  padding: var(--space-2) var(--space-4);
+  border-left: 3px solid var(--c-signal-amber);
+  /* --c-surface-1 at 78%: readable over water, sky or concrete. */
+  background: rgba(19, 30, 35, 0.78);
+  transition: opacity var(--dur-base) var(--ease-out);
+}
+
+.hud__objective-kicker {
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  letter-spacing: var(--tracking-stencil);
+  text-transform: uppercase;
+  color: var(--c-signal-amber);
+}
+
+.hud__objective-text {
+  font-size: calc(var(--fs-body) * var(--a11y-text-scale));
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--c-text-primary);
+}
+
+/* ---- Equipment rail ---------------------------------------------------- */
+
+.hud__rail {
+  position: absolute;
+  top: calc(var(--safe-top) + var(--space-4));
+  right: calc(var(--safe-right) + var(--space-5));
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-2);
+  max-width: min(20rem, 40vw);
+}
+
+.hud__status {
+  display: grid;
+  gap: var(--space-1);
+  justify-items: end;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--c-line-hairline);
+  background: rgba(13, 21, 25, 0.72);
+  text-align: right;
+}
+
+.hud__tool {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-size: var(--fs-micro);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.hud__tool-name {
+  font-weight: 600;
+  color: var(--c-text-primary);
+}
+
+/* State is a printed word, not a coloured dot with no label. */
+.hud__tool-state {
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+  color: var(--c-text-muted);
+}
+
+.hud__status[data-tool-state='ready'] .hud__tool-state {
+  color: var(--c-nominal);
+}
+
+.hud__status[data-tool-state='busy'] .hud__tool-state {
+  color: var(--c-signal-amber);
+}
+
+.hud__status[data-tool-state='fault'] .hud__tool-state {
+  color: var(--c-fault);
+}
+
+.hud__tool-detail {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--c-text-secondary);
+}
+
+.hud__tool-detail:empty {
+  display: none;
+}
+
+.hud__recovery {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding-top: var(--space-1);
+  border-top: 1px solid var(--c-line-hairline);
+  font-size: var(--fs-micro);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--c-text-secondary);
+}
+
+.hud__recovery-value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--c-text-muted);
+}
+
+.hud__recovery[data-state='nominal'] .hud__recovery-value {
+  color: var(--c-nominal);
+}
+
+.hud__recovery[data-state='working'] .hud__recovery-value {
+  color: var(--c-signal-amber);
+}
+
+.hud__recovery[data-state='fault'] .hud__recovery-value {
+  color: var(--c-fault);
+}
+
+/* ---- Condition --------------------------------------------------------
+   Dim while it is only mildly relevant, prominent when it is not. No pulse
+   animation: reduce-flashing users get the same readout, not a lesser one. */
+
+.hud__health {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 11rem;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--c-line-hairline);
+  background: rgba(13, 21, 25, 0.72);
+  opacity: 0.62;
+  transition: opacity var(--dur-base) var(--ease-out);
+}
+
+.hud__health-label {
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--c-text-secondary);
+}
+
+.hud__health-track {
+  height: 6px;
+  min-width: 4rem;
+  background: var(--c-surface-1);
+  border: 1px solid var(--c-line-soft);
+}
+
+.hud__health-fill {
+  height: 100%;
+  width: 100%;
+  background: var(--c-text-secondary);
+  transition: width var(--dur-fast) var(--ease-out);
+}
+
+.hud__health-value {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  font-variant-numeric: tabular-nums;
+  color: var(--c-text-secondary);
+}
+
+.hud__health--critical {
+  opacity: 1;
+  border-color: var(--c-fault-dim);
+  background: var(--c-fault-wash);
+}
+
+.hud__health--critical .hud__health-fill {
+  background: var(--c-fault);
+}
+
+.hud__health--critical .hud__health-value,
+.hud__health--critical .hud__health-label {
+  color: var(--c-fault);
+}
+
+/* ---- Interaction prompt -----------------------------------------------
+   Low-centre, above the subtitle band and the touch zone. One row: cue,
+   verb, object label, then a hold bar when the interaction needs holding. */
+
+.hud__prompt {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--safe-bottom) + var(--hud-prompt-lift));
+  transform: translateX(-50%);
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  gap: var(--space-3);
+  max-width: min(30rem, 82vw);
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--c-line-hairline);
+  /* --c-surface-0 at 76%. Dark enough to read against water reflections. */
+  background: rgba(13, 21, 25, 0.76);
+}
+
+.hud__prompt-copy {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.hud__prompt-verb {
+  font-size: calc(var(--fs-small) * var(--a11y-text-scale));
+  font-weight: 600;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--c-text-primary);
+}
+
+.hud__prompt-label {
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: calc(var(--fs-small) * var(--a11y-text-scale));
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--c-signal-amber);
+}
+
+/* Keyboard: a printed keycap. Gamepad: the same cap, rounded a touch so it
+   reads as a controller face button rather than a key. */
+.hud__prompt-key {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.85em;
+  min-height: 1.85em;
+  padding: 0 0.35em;
+  border: 1px solid var(--c-line-hard);
+  border-bottom-width: 2px;
+  border-radius: var(--radius-tight);
+  background: var(--c-surface-2);
+  font-family: var(--font-mono);
+  font-size: calc(var(--fs-small) * var(--a11y-text-scale));
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--c-text-primary);
+}
+
+.hud__prompt-key--gamepad {
+  border-radius: 999px;
+  border-bottom-width: 1px;
+}
+
+/*
+ * Touch: no key, ever. The cue is a downward pointer plus the on-screen
+ * control's own printed label, and the real highlight happens on the control
+ * itself via the HUD's `touch-highlight` event.
+ */
+.hud__prompt-touch {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 1.85em;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--c-signal-amber-dim);
+  border-radius: var(--radius-tight);
+  background: var(--c-signal-amber-wash);
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--c-signal-amber);
+}
+
+/* A pure-CSS triangle: empty content, so there is no text for a screen reader
+   to announce and the prompt's meaning stays in the words beside it. */
+.hud__prompt-touch::before {
+  content: '';
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 6px solid var(--c-signal-amber);
+}
+
+.hud__prompt-touch-text:empty {
+  display: none;
+}
+
+/* Hold indicator: a flat progress rule under the row, not a radial ring. */
+.hud__prompt-hold {
+  grid-column: 1 / -1;
+  height: 3px;
+  background: var(--c-surface-3);
+}
+
+.hud__prompt-hold-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--c-signal-amber);
+}
+
+/* ---- Phone landscape --------------------------------------------------
+   667×375 is the reference. Tighten the rail and the objective slip rather
+   than shrinking type below a readable size. */
+
+@media (max-height: 480px) {
+  .hud__objective {
+    top: calc(var(--safe-top) + var(--space-2));
+    left: calc(var(--safe-left) + var(--space-3));
+    max-width: min(20rem, 44vw);
+    padding: var(--space-1) var(--space-3);
+  }
+
+  .hud__rail {
+    top: calc(var(--safe-top) + var(--space-2));
+    right: calc(var(--safe-right) + var(--space-3));
+    gap: var(--space-1);
+  }
+
+  .hud__health {
+    min-width: 8.5rem;
+    padding: var(--space-1) var(--space-2);
+  }
+
+  .hud__prompt {
+    max-width: 78vw;
+    padding: var(--space-1) var(--space-3);
+    gap: var(--space-2);
+  }
+}

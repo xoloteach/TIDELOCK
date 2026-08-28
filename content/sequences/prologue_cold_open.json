@@ -1,0 +1,143 @@
+{
+  "id": "prologue_cold_open",
+  "mode": "cinematic",
+  "skippable": true,
+  "resumePolicy": "safe-end",
+  "tracks": [
+    {
+      "kind": "presentation",
+      "events": [
+        { "at": 0.0, "kind": "controlLock", "locked": true },
+        { "at": 0.0, "kind": "fade", "from": "black", "to": "scene", "duration": 1.8 },
+        { "at": 0.0, "kind": "letterbox", "visible": true, "duration": 0.6 },
+        { "at": 29.0, "kind": "letterbox", "visible": false, "duration": 0.8 },
+        { "at": 31.5, "kind": "controlLock", "locked": false },
+        { "at": 32.0, "kind": "checkpointCue", "checkpointId": "prologue_depot_wake" }
+      ]
+    },
+    {
+      "kind": "camera",
+      "events": [
+        {
+          "at": 0.0,
+          "kind": "cameraCut",
+          "position": { "x": 24.4, "y": 5.2, "z": 13.6 },
+          "lookAt": { "x": 26.0, "y": -1.4, "z": 16.0 },
+          "fov": 44
+        },
+        {
+          "at": 3.5,
+          "kind": "cameraBlend",
+          "position": { "x": 21.0, "y": 8.6, "z": 12.0 },
+          "lookAt": { "x": 38.0, "y": 1.0, "z": 46.0 },
+          "fov": 52,
+          "duration": 6.5,
+          "easing": "damped"
+        },
+        {
+          "at": 14.0,
+          "kind": "cameraCut",
+          "position": { "x": 13.9, "y": 5.9, "z": 10.9 },
+          "lookAt": { "x": 14.6, "y": 5.1, "z": 12.4 },
+          "fov": 34
+        },
+        {
+          "at": 21.0,
+          "kind": "cameraBlend",
+          "position": { "x": 9.2, "y": 6.4, "z": 6.4 },
+          "lookAt": { "x": -12.0, "y": 2.2, "z": 6.0 },
+          "fov": 46,
+          "duration": 5.0,
+          "easing": "damped"
+        },
+        {
+          "at": 29.0,
+          "kind": "cameraBlend",
+          "target": "gameplay",
+          "duration": 2.5,
+          "easing": "damped"
+        }
+      ]
+    },
+    {
+      "kind": "camera",
+      "events": [
+        { "at": 14.0, "kind": "cameraLookTarget", "actor": "mara", "bone": "head" },
+        { "at": 21.0, "kind": "cameraLookTarget", "actor": "mara", "bone": "root" }
+      ]
+    },
+    {
+      "kind": "actor",
+      "actor": "mara",
+      "events": [
+        {
+          "at": 0.0,
+          "kind": "actorMoveTo",
+          "mark": "depot.overlook_rail",
+          "speed": "stand"
+        },
+        { "at": 15.2, "kind": "actorAnimation", "clip": "wipe_sleeve_with_thumb" },
+        { "at": 19.0, "kind": "actorLookAt", "mark": "district.flood_barrier" },
+        { "at": 24.5, "kind": "actorTurnTo", "mark": "depot.clinic_bay" },
+        {
+          "at": 26.0,
+          "kind": "actorMoveTo",
+          "mark": "depot.platform_entry",
+          "speed": "walk"
+        }
+      ]
+    },
+    {
+      "kind": "actor",
+      "actor": "ivo",
+      "events": [
+        { "at": 21.0, "kind": "actorAnimation", "clip": "crouch_work_at_crate" },
+        { "at": 25.0, "kind": "actorGesture", "clip": "shake_out_hand" }
+      ]
+    },
+    {
+      "kind": "audio",
+      "events": [
+        { "at": 0.0, "kind": "ambienceCue", "cue": "rain_on_steel_canopy", "fadeIn": 1.2 },
+        { "at": 0.0, "kind": "sfxCue", "cue": "runoff_into_standing_water" },
+        { "at": 4.0, "kind": "sfxCue", "cue": "depot_generator_loop", "fadeIn": 2.0 },
+        { "at": 10.0, "kind": "sfxCue", "cue": "pump_discharge_stutter" },
+        { "at": 17.0, "kind": "sfxCue", "cue": "dispatch_radio_indistinct" },
+        { "at": 22.5, "kind": "ambienceCue", "cue": "depot_interior_voices_low", "fadeIn": 1.5 }
+      ]
+    },
+    {
+      "kind": "dialogue",
+      "events": [
+        {
+          "at": 17.0,
+          "kind": "subtitleCue",
+          "text": "[dispatch radio, indistinct]",
+          "duration": 2.4,
+          "speakerLabel": null
+        }
+      ]
+    },
+    {
+      "kind": "world",
+      "events": [
+        { "at": 10.0, "kind": "worldStateEvent", "event": "pump.cluster_b_discharge_drop" },
+        {
+          "at": 11.5,
+          "kind": "lightCue",
+          "cue": "district_window_flicker",
+          "duration": 6.0
+        },
+        { "at": 21.0, "kind": "lightCue", "cue": "clinic_bay_worklight_on" }
+      ]
+    }
+  ],
+  "onComplete": [
+    { "kind": "setFlag", "flag": "prologue_cold_open_seen", "value": true },
+    { "kind": "advanceObjective", "objectiveId": "prologue.reach-clinic-bay" }
+  ],
+  "onSkip": [
+    { "kind": "setFlag", "flag": "prologue_cold_open_seen", "value": true },
+    { "kind": "advanceObjective", "objectiveId": "prologue.reach-clinic-bay" }
+  ]
+}
