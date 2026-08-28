@@ -1116,7 +1116,16 @@ export class StreamingSystem implements System {
 function clonePersistentState(state: Record<string, unknown>): Record<string, unknown> {
   try {
     return structuredClone(state);
-  } catch {
+  } catch (error) {
+    // Almost always a function or class instance that should not be in
+    // persistent state at all, so name the keys: the shallow fallback keeps
+    // the story beat but leaves nested objects shared with the store.
+    console.error(
+      `[streaming] persistent state clone failed; degraded to a shallow copy (keys: ${Object.keys(
+        state,
+      ).join(', ')})`,
+      error,
+    );
     return { ...state };
   }
 }

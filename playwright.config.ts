@@ -58,7 +58,10 @@ export default defineConfig({
       // Primary human test device is Android, so a phone-landscape profile is
       // a first-class target rather than an afterthought.
       name: 'android-phone-landscape',
-      testMatch: ['browser/mobile/**/*.spec.ts', 'browser/**/*.spec.ts'],
+      // `browser/**` already includes `browser/mobile/**`; listing both made
+      // every spec under tests/browser run twice in this project.
+      // visual/** stays excluded here — screenshots are captured on desktop.
+      testMatch: ['browser/**/*.spec.ts'],
       use: {
         ...devices['Pixel 7 landscape'],
         launchOptions: { args: GL_ARGS },

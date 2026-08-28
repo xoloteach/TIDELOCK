@@ -8,10 +8,13 @@
 
 ---
 
-> **Status: early alpha.** The engine shell boots and the title screen is
-> playable-adjacent, but no gameplay exists yet. See
-> [`docs/IMPLEMENTATION_STATUS.md`](docs/IMPLEMENTATION_STATUS.md) for an
-> honest, evidence-backed account of what actually works today.
+> **Status: pre-alpha. The game is not playable.** The app boots, probes graphics
+> capabilities and presents a title screen. All five menu rows — including New
+> Game — log a "not implemented" warning and do nothing. Roughly three quarters
+> of the engine and campaign code is written and unit-tested but is not reachable
+> from the entry point, so it is not in the shipped bundle at all. See
+> [`docs/IMPLEMENTATION_STATUS.md`](docs/IMPLEMENTATION_STATUS.md) for an honest,
+> measured account of what actually works today.
 
 ## What it is
 
@@ -33,11 +36,15 @@ A third-person narrative action-adventure of roughly **2–3 hours**: exploratio
 traversal, light stealth, non-graphic machine encounters, environmental puzzles,
 and dialogue that changes what people tell you later.
 
+That is the design. None of it is playable yet — see the status note above.
+
 ## Play
 
-Once the Pages deployment is live it will be linked here. The build is designed
-to be opened directly on an Android phone — touch is a first-class control
-scheme, not an afterthought.
+The production build is deployed and verified to boot at
+**https://xoloteach.github.io/TIDELOCK/**. It reaches the title screen and stops
+there; there is no game behind the menu. The build is designed to be opened
+directly on an Android phone — touch is a first-class control scheme, not an
+afterthought — but no real phone has been tested yet.
 
 ## Planned features
 
@@ -57,8 +64,9 @@ Tracked against the master specification. Items are only claimed once verified.
 
 ## Controls
 
-Keyboard/mouse, gamepad and touch are all supported. Prompts switch
-automatically to whichever input family you last used.
+The bindings below are the designed scheme. The keyboard, gamepad and touch
+input sources are written and unit-tested, but they are not wired to any screen,
+so **none of these controls does anything in the current build.**
 
 | Action | Keyboard | Touch |
 | --- | --- | --- |
@@ -73,10 +81,14 @@ automatically to whichever input family you last used.
 | Objectives | `Tab` | Objectives button |
 | Pause | `Esc` | Pause button |
 
-All bindings are rebindable, and the touch layout is fully customisable
+All bindings are designed to be rebindable, and the touch layout customisable
 (position, size, opacity, handedness, deadzone, separate look/aim sensitivity).
+The settings schema carries these fields; no UI exposes them yet.
 
 ## Graphics tiers
+
+The **Target** column is a design target. No FPS figure here has been measured on
+any device, because there is no gameplay to measure.
 
 | Preset | Target | Intent |
 | --- | --- | --- |
@@ -88,7 +100,9 @@ All bindings are rebindable, and the touch layout is fully customisable
 | Cinematic | 30/60 | Supersampling and depth of field for screenshots and showcases |
 
 Presets are ceilings. The dynamic scaler may reduce below them but never above,
-and it changes one dimension at a time with hysteresis to avoid oscillation.
+and it changes one dimension at a time with hysteresis to avoid oscillation. The
+preset table and the scaler are implemented and tested; nothing currently applies
+them to a live render workload.
 
 ## Tech stack
 
@@ -96,6 +110,12 @@ Three.js (`WebGPURenderer` + WebGL2 fallback, TSL shaders) · Rapier physics at 
 fixed 60 Hz timestep · three-mesh-bvh for spatial queries · Recast/Detour
 navigation · miniplex ECS · Dexie + Zod for versioned saves · Vite · Vitest ·
 Playwright.
+
+Rapier, miniplex, Dexie, Recast and Three.js itself are exercised by the test
+suite but are **not present in the production bundle**, because the modules that
+import them are not reachable from `src/main.ts`. `three-mesh-bvh`, `stats-gl`,
+`tweakpane` and `@pmndrs/detect-gpu` are declared dependencies with no imports
+anywhere in the source tree yet.
 
 ## Build
 
@@ -119,10 +139,21 @@ pnpm test:e2e     # Playwright browser + visual tests
 pnpm ci           # verify + e2e
 ```
 
+`pnpm test:story` and `pnpm test:mobile` currently **fail** with "No tests found"
+— `tests/browser/story` and `tests/browser/mobile` are empty. That failure is
+intentional in the sense that it is honest; the suites simply have not been
+written, because their subjects are not reachable in a browser yet.
+
 Playwright needs browsers installed once:
 
 ```bash
 pnpm exec playwright install chromium --with-deps
+```
+
+The live-deployment specs skip unless you point them at a URL:
+
+```bash
+PAGES_URL=https://xoloteach.github.io/TIDELOCK/ pnpm exec playwright test tests/browser/deployed.spec.ts
 ```
 
 ### Useful URL flags
@@ -131,8 +162,8 @@ pnpm exec playwright install chromium --with-deps
 | --- | --- |
 | `?webgl2=1` | Force the WebGL2 backend, ignoring WebGPU |
 | `?holdBoot=1` | Keep the boot overlay visible after startup |
-| `?diagnostics=1` | Open the developer diagnostics overlay |
-| `?benchmark=1` | Run the benchmark route |
+| `?diagnostics=1` | *Declared, not yet read by anything* |
+| `?benchmark=1` | *Declared, not yet read by anything* |
 
 ## Architecture
 
@@ -152,8 +183,10 @@ tests/           unit, integration, browser, visual, performance, saves
 ```
 
 `engine/` never imports from `game/`. Story content lives in `content/` as data,
-not as control flow in TypeScript. Design notes for contributors are in
-[`.kiro/steering/`](.kiro/steering/).
+not as control flow in TypeScript. Note that nothing in `src/` loads `content/`
+at runtime yet — the authored files are validated at build time by
+`scripts/validate-assets.ts` and a content loader is still to be written. Design
+notes for contributors are in [`.kiro/steering/`](.kiro/steering/).
 
 ## Contributing
 
@@ -177,9 +210,12 @@ Source code is [MIT](LICENSE).
 
 Assets are tracked separately in [`ASSET_LICENSES.md`](ASSET_LICENSES.md) with
 source, author and licence for every file. Only redistributable assets are
-committed.
+committed. At present the only committed assets are the five generated PWA icons;
+`public/assets/` is empty.
 
-The voice pipeline uses `edge-tts` for development placeholder generation. It is
-an unofficial client for an online Microsoft service and does not itself grant a
-commercial voice licence, so it sits behind a replaceable adapter. Voice terms
-must be reviewed before any commercial distribution.
+A voice pipeline is planned rather than built: there is currently no TTS script in
+`scripts/`, and no dialogue line carries an audio reference. The intended
+generator, `edge-tts`, is an unofficial client for an online Microsoft service and
+does not itself grant a commercial voice licence, so when it lands it will sit
+behind a replaceable adapter. Voice terms must be reviewed before any commercial
+distribution.

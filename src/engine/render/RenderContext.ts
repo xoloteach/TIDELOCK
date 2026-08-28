@@ -61,6 +61,8 @@ export class RenderContext {
 
   private backendReport: BackendReport;
   private initialised = false;
+  /** Disposal is idempotent: teardown paths overlap and can double-fire. */
+  private disposed = false;
 
   /** CSS pixel size of the host element. */
   private cssWidth = 1;
@@ -70,7 +72,23 @@ export class RenderContext {
   private renderScale = 1;
 
   private resizeObserver: ResizeObserver | null = null;
-  private orientationHandler: (() => void) | null = null;
+
+  /**
+   * Every window listener this context registered, so dispose() can remove all
+   * of them. A locally-scoped handler that is not recorded here outlives the
+   * context and keeps the disposed renderer alive.
+   */
+  private readonly windowListeners: Array<{
+    readonly type: string;
+    readonly handler: () => void;
+  }> = [];
+
+  /**
+   * Set once render() has been called before init(). The programming error is
+   * reported by throwing on the first offending call; a render loop must not
+   * throw or log once per frame afterwards.
+   */
+  private renderBeforeInitReported = false;
 
   constructor(private readonly options: RenderContextOptions) {
     this.renderer = new WebGPURenderer({
@@ -139,6 +157,8 @@ export class RenderContext {
     this.applySize();
 
     this.initialised = true;
+    // A later dispose() must be able to report a render-before-init again.
+    this.renderBeforeInitReported = false;
   }
 
   // ---- Sizing -----------------------------------------------------------
@@ -156,17 +176,21 @@ export class RenderContext {
       this.resizeObserver.observe(this.options.host);
     } else {
       // Fallback for environments without ResizeObserver.
-      this.orientationHandler = () => this.applySize();
-      window.addEventListener('resize', this.orientationHandler);
+      this.addWindowListener('resize', () => this.applySize());
     }
 
     // Orientation change can report stale dimensions if read immediately, so
     // re-apply on the next frame as well.
-    const onOrientation = (): void => {
+    this.addWindowListener('orientationchange', () => {
       this.applySize();
       requestAnimationFrame(() => this.applySize());
-    };
-    window.addEventListener('orientationchange', onOrientation);
+    });
+  }
+
+  /** Registers a window listener and records it for dispose(). */
+  private addWindowListener(type: string, handler: () => void): void {
+    this.windowListeners.push({ type, handler });
+    window.addEventListener(type, handler);
   }
 
   /** Recomputes the drawing buffer size from CSS size, DPR and render scale. */
@@ -228,7 +252,19 @@ export class RenderContext {
   // ---- Rendering --------------------------------------------------------
 
   render(): void {
-    if (!this.initialised) return;
+    if (!this.initialised) {
+      // Rendering without a GPU device is a wiring mistake, not a runtime
+      // condition: the symptom is a black screen with no explanation. Throw
+      // once so the caller sees a stack trace pointing at the missing
+      // `await init()`, then stay quiet rather than throwing every frame.
+      if (this.renderBeforeInitReported) return;
+      this.renderBeforeInitReported = true;
+      throw new Error(
+        'RenderContext.render() called before init() completed. ' +
+          'Await renderContext.init() during boot (or after dispose(), create a new context) — ' +
+          'rendering without an initialised GPU device produces a black screen.',
+      );
+    }
     this.renderer.render(this.scene, this.camera);
   }
 
@@ -298,13 +334,19 @@ export class RenderContext {
   }
 
   dispose(): void {
+    if (this.disposed) return;
+    this.disposed = true;
+
     this.resizeObserver?.disconnect();
     this.resizeObserver = null;
 
-    if (this.orientationHandler) {
-      window.removeEventListener('resize', this.orientationHandler);
-      this.orientationHandler = null;
+    // Remove every listener that was registered, not just the resize
+    // fallback: a leftover orientationchange handler keeps this whole context
+    // (and its renderer) alive for the lifetime of the page.
+    for (const { type, handler } of this.windowListeners) {
+      window.removeEventListener(type, handler);
     }
+    this.windowListeners.length = 0;
 
     this.renderer.dispose();
     this.canvas.remove();

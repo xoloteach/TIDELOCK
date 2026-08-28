@@ -29,6 +29,16 @@ export const BOOT_STAGES: readonly BootStageDef[] = [
   { id: 'title', label: 'Present title' },
 ];
 
+/** Mirrors SettingsStore's key; boot needs it before the store is consulted. */
+const SETTINGS_STORAGE_KEY = 'tidelock:settings:v1';
+
+/**
+ * Result of looking for stored settings. 'unavailable' is deliberately not
+ * folded into 'absent' — see `storedSettingsState`.
+ */
+type StoredSettingsState = 'present' | 'absent' | 'unavailable';
+
+
 export interface AppOptions {
   /** Pre-created boot screen, so main.ts can show it before App exists. */
   readonly boot?: BootScreen;
@@ -119,10 +129,19 @@ export class App {
 
     // First run only: adopt the capability-based preset suggestion. Once the
     // player has chosen a preset we never silently override it.
-    if (!this.hasStoredSettings()) {
+    const stored = this.storedSettingsState();
+    if (stored === 'absent') {
       const suggested = suggestInitialPreset(caps);
       settings.update('graphics', { preset: suggested });
       console.info(`[app] initial quality preset suggested: ${suggested}`);
+    } else if (stored === 'unavailable') {
+      // A denied read is indistinguishable from a first run at the storage
+      // level, so treating it as one would re-apply the suggested preset on
+      // every launch and overwrite whatever the player picked this session.
+      console.warn(
+        '[app] settings storage is unreadable, so a first run cannot be told from a ' +
+          'denied read; keeping the current preset instead of re-applying a suggestion',
+      );
     }
 
     console.info(`[app] graphics capabilities\n${describeCapabilities(caps)}`);
@@ -170,11 +189,20 @@ export class App {
     root.classList.toggle('a11y-high-contrast', a11y.highContrastSubtitles);
   }
 
-  private hasStoredSettings(): boolean {
+  /**
+   * Whether stored settings exist — and, crucially, whether we could even ask.
+   *
+   * 'absent' means a genuine first run. 'unavailable' means the read failed
+   * (private mode, blocked storage, no `window.localStorage`), which is NOT the
+   * same thing: conflating them re-applies the capability-suggested preset on
+   * every boot and silently discards the player's own choice.
+   */
+  private storedSettingsState(): StoredSettingsState {
     try {
-      return window.localStorage.getItem('tidelock:settings:v1') !== null;
-    } catch {
-      return false;
+      return window.localStorage.getItem(SETTINGS_STORAGE_KEY) !== null ? 'present' : 'absent';
+    } catch (error) {
+      console.error('[app] could not read stored settings', error);
+      return 'unavailable';
     }
   }
 
