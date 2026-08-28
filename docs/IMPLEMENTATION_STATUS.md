@@ -2,12 +2,21 @@
 
 Authoritative record of what actually works. Updated after every milestone.
 
-**Last updated:** milestone M1 (project scaffold and bootable app shell)
-**Latest verified commit:** see `git log` — this file is committed with the
-milestone it describes.
+**Last updated:** M2/M3 subsystem wave (engine core, input, physics, audio, saves, content schemas)
 
 A feature is only listed under **Complete** if it has been run and verified,
 not merely written. Anything unverified is stated as unverified.
+
+---
+
+## Verification snapshot
+
+```
+pnpm typecheck   0 errors
+pnpm test        769 tests passed, 14 files
+pnpm lint:assets passed (0 errors, 2 warnings — no assets committed yet)
+pnpm build       succeeded, 95.95 kB JS / 14.97 kB CSS (gzip 27.26 / 3.60)
+```
 
 ---
 
@@ -17,147 +26,157 @@ not merely written. Anything unverified is stated as unverified.
 
 | Item | Evidence |
 | --- | --- |
-| pnpm project, pinned exact dependency versions | `pnpm install` clean; `package.json` |
-| TypeScript strict config, path aliases | `pnpm typecheck` passes with 0 errors |
-| Vite 8 build with GitHub Pages base derived from `GITHUB_REPOSITORY` | `pnpm build` produces `dist/`, 99 modules |
-| Build identity injected (commit SHA, timestamp, version) | Visible in title footer: `build 1d348a5  v0.1.0` |
-| Directory structure matching spec §28 | `src/{app,engine,game,graphics,ui,accessibility,persistence,diagnostics}`, `content/`, `tests/` |
-| Design token system (municipal art direction) | `src/ui/styles/tokens.css` — no neon/gradient/glass |
-| Boot screen with named, observable stages | Screenshot `test-results/screens/boot.png`; 3 stages all report `ok` |
-| Fatal boot error reporting (no silent black screen) | `BootScreen.showFatalError`; E2E asserts `fatalError` is null on success |
-| Graphics capability probing (WebGPU adapter request, WebGL2, device class, KTX2 targets) | E2E asserts `webgl2 yes`; `describeCapabilities()` output |
-| Renderer backend selection with WebGL2 fallback + `?webgl2=1` force flag | E2E `forcing the WebGL2 backend works and is reported` |
-| Six quality presets, data-driven, genuinely distinct | 46 unit tests incl. "differs in ≥4 non-resolution dimensions" per adjacent pair |
-| Settings schema (Zod), versioned, with migration | 34 unit tests incl. corrupt JSON, truncated blobs, dropped unknown keys |
-| Settings persistence + debounced writes + quota-failure degradation | Unit tests; E2E preset survives reload |
-| Fixed-timestep loop with catch-up cap and pause semantics | 15 unit tests incl. "same steps at 30 vs 60 FPS", stall clamping |
-| Typed event emitter | Used by `SettingsStore`; covered indirectly by settings tests |
-| App state machine with declared legal transitions | `src/app/AppState.ts` |
-| Title screen (authored layout, keyboard focus, disabled-with-reason rows) | Screenshots at 5 viewports; 11 E2E assertions |
-| PWA manifest + generated icon set | `scripts/generate-icons.ts`; valid PNGs verified with `file` |
-| Asset/content validation script | `pnpm lint:assets` passes (warnings only, no assets yet) |
-| Playwright setup: desktop + Android-landscape projects, SwiftShader WebGL2 | 17 boot E2E + 7 visual tests pass |
+| pnpm project, pinned exact dependency versions | `pnpm install` clean |
+| TypeScript strict, path aliases, Vite 8 + Pages base from `GITHUB_REPOSITORY` | `pnpm build` |
+| Build identity (commit SHA, version, timestamp) | Visible in title footer |
+| Municipal design token system | `src/ui/styles/tokens.css` — no neon/gradient/glass |
+| Boot screen with named observable stages + fatal-error panel | Screenshot reviewed |
+| Graphics capability probing (real WebGPU adapter request, WebGL2, KTX2 targets) | E2E asserts `webgl2 yes` |
+| Six quality presets, data-driven, genuinely distinct | 46 tests incl. ≥4 non-resolution dimensions per adjacent pair |
+| Settings schema (Zod), versioned, migrating | 34 tests incl. corrupt/truncated blobs |
+| Fixed-timestep loop with catch-up cap and pause semantics | 15 tests incl. same-steps-at-30-vs-60-FPS |
+| Title screen, PWA icons, asset/content validator | 17 E2E + 7 visual tests |
+| CI (Ubuntu/Windows/macOS) + Pages deploy gated on smoke test | Both workflows green |
+| **Live GitHub Pages deployment** | https://xoloteach.github.io/TIDELOCK/ boots, verified by `tests/browser/deployed.spec.ts` |
 
-**Verification run for M1**
+### M2 — Engine core
 
-```
-pnpm typecheck   0 errors
-pnpm test        95 tests passed (3 files)
-pnpm lint:assets passed (0 errors, 2 warnings — no assets committed yet)
-pnpm build       succeeded, dist 95.67 kB JS / 14.92 kB CSS (gzip 27.18 / 3.60)
-playwright       17 passed (browser), 7 passed (visual)
-```
+| Item | Tests | Notes |
+| --- | --- | --- |
+| ECS world + system scheduler (miniplex) | 62 | Registration-order execution, throw isolation per phase, sector despawn sparing the player |
+| `FrameStats` — FPS, 1% low, ring buffer, recency window | 23 | Ring wraparound proven against all-time average |
+| `RenderContext` — WebGPU + WebGL2 fallback, DPR/render-scale separation | — | Not yet wired into App; unverified in browser |
+| `QualitySystem` — preset + user + adaptive layering | 43 | Clamping proven: scaler cannot exceed player's choice |
+| `DynamicScaler` — hysteresis ladder | 15 | Asymmetric timing (5s down / 16s up), dead band, no-oscillation |
+| `DiagnosticsOverlay` — budgets vs preset, throttled 5 Hz, changed-only DOM writes | — | Not yet wired into App |
+| TSL water material (WebGPU + WebGL2 from one source) | — | Compiles; not yet rendered |
 
-Screenshots captured and visually reviewed: title at 1280×720, 1920×1080,
-667×375, 915×412, 1180×820; boot screen.
+### M3 — Input, physics, audio, saves, content schemas
+
+| Item | Tests | Notes |
+| --- | --- | --- |
+| Unified action map (`actions.ts`) + `InputState` | 57 | Edge detection exactly one frame; multi-source axis resolution by magnitude; active-family switching with deadzone |
+| `KeyboardMouseSource` | 80 | `event.code` not `event.key`; diagonal normalisation; pointer-lock failure never breaks play; blur releases stuck keys |
+| `GamepadSource` | 111 | **Radial** deadzone (anti-snapping proven against per-axis); trigger hysteresis; style detection order |
+| `PhysicsWorld` (Rapier, real WASM, not mocked) | 52 | **Bit-identical determinism across two worlds over 300 steps**; collision-group u32 packing; far-sleep with hysteresis |
+| `AudioEngine` (raw Web Audio bus graph) | 74 | Bus topology asserted via real `connect()` edges; autoplay unlock; emitter budget culling; perceptual volume curve |
+| Save system (Dexie + Zod, versioned, v1→v2 migration) | 68 | Corruption recovery preserves the original as backup; autosave ring; export/import |
+| Mission + dialogue schemas with condition AST and validators | 89 | Anti-slop validators flag banned phrases, exposition dumps, dangling pointers |
+| `TutorialSystem` + registry | — | **Tests not written** (stream cut off) |
+| `InteractionSystem` | — | **Tests not written** (stream cut off) |
+| `sequenceSchema` | — | `SequenceSystem` **not written** (stream cut off) |
+
+### Bugs found and fixed during this wave
+
+Real defects, each found by a test and fixed in the source rather than by
+weakening an assertion:
+
+1. **`QualitySystem.applyAdaptive` could raise render scale above the player's
+   choice.** When a user override pushed `renderScale` below the preset's
+   `minRenderScale` (the schema permits 0.3 on every preset), the clamp bounds
+   inverted and clamping *up* to the stale floor exceeded the explicit setting.
+   Fixed by deriving the floor from the ceiling.
+2. **`DynamicScaler` ladder desynced from `QualitySystem` on preset change.**
+   The system cleared adaptive overrides; the scaler kept its ladder position,
+   so the next *restore* re-applied rungs against cleared state and **lowered**
+   quality. Fixed with a `presetChanged` event the scaler subscribes to.
+3. **Quality restoration was unreachable on vsync-capped displays.** Requiring
+   frame times measurably *better* than target cannot be satisfied when target
+   FPS equals refresh rate, so the scaler could only ever ratchet downward.
+   Reworked to treat sustained comfort as grounds to attempt a restore, bounded
+   by the 16s/5s asymmetry.
+4. **Double `changed` emission per scaler decision** (clear-then-apply) caused a
+   spurious bounce to full ceiling resolution. `applyAdaptive` now replaces.
+5. **`FrameStats.record(NaN)`** permanently poisoned the running sum. Guarded.
+6. **`migrateSave` accepted any object**, so `{broken:true}` loaded as a pristine
+   prologue and reported success — silently presenting a lost campaign as a
+   working load. Now requires slot + savedAt + checkpoint identity.
+7. **`perceptualGain(+Infinity)`** collapsed to silence instead of clamping to 1.
+8. **`waterMaterial` imported a non-existent type** (`ShaderNodeObject` is not
+   exported from `three/tsl` in 0.185). Replaced with properly-typed
+   `Node<'float'>` / `Node<'vec3'>` aliases.
 
 ---
 
 ## In Progress
 
-Nothing. M1 is closed; M2 has not started.
+Three streams from the parallel wave were interrupted before completing:
+
+1. **HUD + Subtitles UI** — nothing delivered. Needs `src/ui/Hud.ts`,
+   `src/ui/Subtitles.ts`, `hud.css`, `subtitles.css` + tests.
+2. **`SequenceSystem`** — `sequenceSchema.ts` landed; the system and its tests
+   did not.
+3. **Tests for `TutorialSystem` and `InteractionSystem`** — both systems exist
+   and typecheck, but neither has a test file, so neither is verified.
 
 ---
 
 ## Blocked
 
-Nothing currently blocked.
+Nothing blocked.
 
 ---
 
 ## Next 10 Tasks
 
-Ordered by the spec's priority list (§46 "Priority order"). Each must end with
-typecheck, tests, build, browser verification, status update, commit, push.
-
-1. **M2 — Renderer + engine core.** `WebGPURenderer` with WebGL2 backend, canvas
-   sizing/DPR handling, scene graph root, `QualitySystem` applying presets to the
-   renderer, `DynamicScaler` with hysteresis, `stats-gl` instrumentation,
-   diagnostics overlay (F1 / `?diagnostics=1`), ECS world via miniplex, wiring
-   `FixedStepLoop` into the app.
-2. **M3 — Input system.** Unified action map; keyboard/mouse with pointer lock
-   and graceful fallback; Gamepad API; touch scheme (nipplejs joystick, camera
-   swipe region, context-aware buttons); active-input-family detection driving
-   prompt glyphs.
-3. **M4 — Physics + player controller.** Rapier at fixed 60 Hz, capsule kinematic
-   controller (slopes, stairs, step-up, snap-to-ground), third-person
-   over-shoulder camera with collision avoidance, walk/sprint/crouch/jump/vault.
-4. **M5 — World sectors + interaction.** Sector data model, streaming
-   (current/adjacent/transition), static collider + BVH build, interaction
-   system with a single consistent verb, greybox Recovery Depot. First playable
-   vertical slice.
-5. **M6 — Mission + dialogue systems.** Objective data model with activation and
-   completion conditions; data-driven dialogue graph with conditions, flags,
-   choices, interrupts; subtitle rendering and timing.
-6. **M7 — Saves.** Dexie + Zod campaign saves, versioned with migrations,
-   checkpoints, autosave, corruption recovery with backup retention, export/reset.
-7. **M8 — Tutorials + cinematic sequences.** First-use contextual tutorial
-   registry with save-persistent completion and reset; `SequenceSystem` with
-   camera/actor/dialogue/audio/world tracks, hold-to-skip, and guaranteed
-   control restoration.
-8. **M9 — AI + navigation.** Recast navmesh per sector; human NPC states
-   (Idle/Work/WalkTo/Observe/Converse/React/Shelter/ScriptedTask); machine
-   perception (vision cone, occlusion, sound, last-known position) and states
-   (Dormant→Patrol→Inspect→Suspicious→Alert→Search→Pursue→Recover→Disabled);
-   bounded alert propagation.
-9. **M10 — Campaign content.** Prologue, Acts I–III, Finale, three endings,
-   epilogue variations. Authored dialogue in the four established voices.
-10. **M11 — Audio + TTS pipeline.** Web Audio bus graph (Master/Music/Ambience/
-    Dialogue/Effects/UI), positional emitters, audio zones, autoplay unlock;
-    build-time `edge-tts` generation behind a replaceable adapter with content
-    hashing, plus FFmpeg loudness normalisation and subtitle timing output.
-
-Remaining after those: M12 graphics/art polish (water, wetness, rain, LOD,
-post), M13 mobile control editor and full menu/accessibility UI, M14 full test
-matrix + GitHub Actions + PWA hardening + benchmark suite, M15 benchmark
-self-score and release polish.
+1. Finish the three interrupted streams above (HUD/Subtitles, `SequenceSystem`,
+   tutorial + interaction tests).
+2. **Wire the engine into `App`** — this is now the critical path. Every M2/M3
+   subsystem is tested in isolation but **nothing is imported by `main.ts`**, so
+   none of it runs in a browser yet. Renderer, loop, ECS, input, physics,
+   audio, diagnostics all need integration.
+3. Player controller: capsule kinematic movement on Rapier (walk/sprint/crouch/
+   jump/vault), third-person camera with collision avoidance.
+4. Resolve the documented look-axis seam: mouse reports displacement, stick
+   reports rate, both land on `lookX`/`lookY` and `InputState` clamps to ±1.
+   The camera owner must pick one convention.
+5. Touch input source + context-aware mobile HUD.
+6. World sector streaming + greybox Recovery Depot; BVH interaction targeting.
+7. Mission + dialogue *runtime* (the schemas exist; the systems do not).
+8. Recast navmesh + NPC/machine AI.
+9. Campaign content: Prologue through Epilogue, three endings.
+10. TTS pipeline, graphics/art polish, mobile control editor, benchmark suite.
 
 ---
 
 ## Known Regressions
 
-None.
+None. 769 tests pass; no test is skipped or disabled.
 
 ---
 
 ## Performance
 
-No gameplay exists yet, so there are no meaningful frame-time numbers. Only
-build size is measurable:
+No gameplay exists yet, so there are no frame-time numbers. Measured facts:
 
 | Metric | Value |
 | --- | --- |
-| JS bundle (gzip) | 27.18 kB |
+| JS bundle (gzip) | 27.26 kB |
 | CSS bundle (gzip) | 3.60 kB |
-| Precached PWA entries | 8 (109.64 KiB) |
 
-Benchmark instrumentation is scheduled for M2 (diagnostics) and M14 (benchmark
-route). No FPS or GPU-time claims will be made until measured.
+Noted risk: `@dimforge/rapier3d-compat` inlines its WASM as base64, which
+measured ~2.9 MB in an isolated bundle. Once physics is imported by the app
+this lands in the initial payload and will need a deliberate loading strategy.
 
 ---
 
 ## Story Completion
 
-Per spec §40. Nothing implemented yet — M10 is the content milestone.
+Per spec §40. No campaign content implemented yet — the data model and
+validators exist, the content does not.
 
 - [ ] Prologue fully playable
 - [ ] All four main characters introduced naturally
-- [ ] Act I playable start to finish
-- [ ] Act II playable start to finish
-- [ ] Act III playable start to finish
+- [ ] Acts I–III playable start to finish
 - [ ] Finale playable
 - [ ] Three final choices functional
 - [ ] Three epilogue variations functional
-- [ ] Dialogue audio exists for required lines
-- [ ] Subtitles synchronised
+- [ ] Dialogue audio + synchronised subtitles
 - [ ] No placeholder dialogue
-- [ ] Every main conversation has blocking/staging
 - [ ] Major beats have authored cinematic treatment
-- [ ] Cutscenes transition cleanly and are skippable
 - [ ] Player understands the 37-minute timeline without an exposition dump
 
-The story bible is recorded in `.kiro/steering/narrative.md` so it survives
-across sessions.
+Story bible recorded in `.kiro/steering/narrative.md`.
 
 ---
 
@@ -165,36 +184,36 @@ across sessions.
 
 | Suite | Files | Tests | Status |
 | --- | --- | --- | --- |
-| Unit | 3 | 95 | pass |
-| Integration | 0 | 0 | not started (M2) |
-| Saves | 0 | 0 | not started (M7) |
-| Browser E2E | 1 | 17 | pass |
+| Unit | 12 | 649 | pass |
+| Integration | 1 | 52 | pass (real Rapier WASM) |
+| Saves | 1 | 68 | pass (fake-indexeddb substitutes the platform API only) |
+| Browser E2E | 2 | 20 | pass (17 local + 3 against live Pages) |
 | Visual capture | 1 | 7 | pass |
-| Performance | 0 | 0 | not started (M14) |
-
-No tests are skipped or disabled.
+| Performance | 0 | 0 | not started |
 
 ---
 
 ## Asset Issues
 
-`public/assets/` contains no 3D or audio assets yet, so `pnpm lint:assets`
-reports two informational warnings (empty asset tree, empty content tree). These
-become errors once the corresponding milestones land.
-
-`ASSET_LICENSES.md` exists and currently records only project-authored assets
-(the generated PWA icon set).
+`public/assets/` still contains no 3D or audio assets, so `pnpm lint:assets`
+reports two informational warnings. `ASSET_LICENSES.md` records only the
+generated PWA icon set. The licence gate was verified to genuinely fail on an
+unrecorded asset.
 
 ---
 
 ## Platform Verification Notes
 
-Stated honestly rather than assumed:
-
 | Path | Status |
 | --- | --- |
-| WebGL2 (SwiftShader, headless Linux) | Verified in CI container |
-| WebGPU | **Not verified.** No WebGPU adapter is available in this container. Requires real-hardware validation. |
-| Android Chrome | **Not verified.** Requires the human Android playtest once GitHub Pages deploys. |
-| Desktop Chrome/Firefox/Safari | **Not verified** beyond headless Chromium. |
-| iOS Safari | **Not verified.** |
+| WebGL2 (SwiftShader, headless Linux) | Verified |
+| GitHub Pages deployment | Verified — boots, correct base path, manifest + icons resolve |
+| WebGPU | **Not verified.** No adapter in this container. |
+| Android Chrome | **Not verified.** Needs the human playtest. |
+| Gamepad hardware | **Not verified.** No way to inject a synthetic pad in headless Chromium. |
+| iOS Safari / non-Chromium desktop | **Not verified.** |
+
+The most important honest caveat: **every M2/M3 subsystem is unit-tested but
+unwired.** They are proven correct in isolation and proven to compile into the
+bundle, but the game a player loads today is still only the title screen.
+Integration is the next milestone.
