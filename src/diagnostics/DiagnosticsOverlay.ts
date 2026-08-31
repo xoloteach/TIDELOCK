@@ -117,6 +117,17 @@ export class DiagnosticsOverlay {
   private systemsSection: HTMLElement | null = null;
 
   private visible = false;
+  /**
+   * Set by `dispose()`.
+   *
+   * The head buttons keep their listeners after the panel is detached — `el()`
+   * returns no unsubscribe handle and `remove()` only unlinks the node — so
+   * dispose has to be terminal by flag. Without it a late click, or a stale
+   * hotkey handler calling `show()`, could re-arm the status timeout or switch
+   * per-system profiling back on with no panel on screen and no owner left to
+   * switch it off.
+   */
+  private disposed = false;
   /** Primed so the first `update()` after `show()` paints immediately. */
   private accumulatorMs = REFRESH_INTERVAL_MS;
   private lastTickMs = 0;
@@ -219,8 +230,18 @@ export class DiagnosticsOverlay {
 
   private buildRendererSection(): void {
     const s = this.sources;
+    // `quality` counts as a renderer source because it carries the preset's
+    // render scale: without it here, a quality-only overlay skipped the whole
+    // section and silently dropped a value `refreshRenderer` had already read
+    // and formatted (and that the text report still printed).
     const anyRenderer =
-      s.backend || s.adapterInfo || s.bufferSize || s.cssSize || s.renderScale || s.render;
+      s.backend ||
+      s.adapterInfo ||
+      s.bufferSize ||
+      s.cssSize ||
+      s.renderScale ||
+      s.quality ||
+      s.render;
     if (!anyRenderer && !s.capabilities) return;
 
     const body = this.section('Renderer');
@@ -339,7 +360,7 @@ export class DiagnosticsOverlay {
   }
 
   show(): void {
-    if (this.visible) return;
+    if (this.disposed || this.visible) return;
     this.visible = true;
     this.root.classList.remove('diag--hidden');
     this.sources.onProfilingChange?.(true);
@@ -705,6 +726,7 @@ export class DiagnosticsOverlay {
    * a selectable textarea inside the panel instead of silently doing nothing.
    */
   private async copyReport(): Promise<void> {
+    if (this.disposed) return;
     const report = this.buildTextReport();
 
     const clipboard = typeof navigator !== 'undefined' ? navigator.clipboard : undefined;
@@ -761,6 +783,8 @@ export class DiagnosticsOverlay {
 
   /** Removes the panel and makes sure profiling is not left switched on. */
   dispose(): void {
+    if (this.disposed) return;
+    this.disposed = true;
     if (this.visible) this.hide();
     if (this.statusTimer !== null) {
       window.clearTimeout(this.statusTimer);
