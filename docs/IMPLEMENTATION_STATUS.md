@@ -2,9 +2,9 @@
 
 Authoritative record of what actually works. Updated after every milestone.
 
-**Last updated:** Wave 1 — verified-defect fixes, sequence/cutscene subsystem,
-renderer test coverage. Measured on the working tree on top of commit `4b87354`;
-the wave's code changes are not yet committed.
+**Last updated:** Wave 2 — localization string table, first tests for the two
+never-executed modules, Dax Ren's introduction scene, and the build-time Edge-TTS
+voice pipeline. Measured on the working tree on top of commit `742b025`.
 
 A claim appears here only if it was run and verified, not merely written.
 Anything unverified is stated as unverified. Nothing in this document is carried
@@ -18,18 +18,28 @@ Every number below came from running the command on this tree.
 
 ```
 pnpm typecheck   0 errors
-pnpm test        1426 passed, 28 files, 0 skipped        (48.63 s)
-pnpm lint:assets 0 errors, 1 warning ("public/assets contains no files yet")
+pnpm test        1730 passed, 33 files, 0 skipped        (7.00 s)
+pnpm lint:assets 0 errors, 0 warnings
 pnpm build       96.26 kB JS (gzip 27.39) · 14.97 kB CSS (gzip 3.60)
-                 1.53 kB index.html (gzip 0.72) · 100 modules transformed
                  PWA precache 8 entries, 110.26 KiB
-pnpm test:e2e    47 declared · 41 passed · 6 skipped     (2.4 min)
+pnpm vo:check    72 lines across 3 scenes · 0 stale · manifest current
 pnpm test:story  FAILS — "No tests found", exit code 1
 pnpm test:mobile FAILS — "No tests found", exit code 1
 ```
 
-Baseline immediately before this wave, measured by re-running the same commands
-at `4b87354`: **1307 tests across 26 files, 95.95 kB JS / gzip 27.26 kB.**
+Baseline immediately before this wave, re-measured at `f8a9dcc`: **1426 tests
+across 28 files.** The +304 breaks down as localization 114, diagnostics overlay
+85, voice cast 57, Dax scene 23, water material 25.
+
+`lint:assets` lost its long-standing "public/assets contains no files yet"
+warning: the directory now holds generated voice-over. It reports zero warnings
+rather than a new one because the generated tree is licence-exempt by rule and
+that exemption is itself gated — see *Voice pipeline* below.
+
+`pnpm test:e2e` was **not re-run this wave.** The 41-pass/6-skip figure above the
+line is carried from Wave 1 and is therefore unverified here; nothing in this wave
+touches a reachable module, so it is very unlikely to have changed, but it has not
+been measured.
 
 E2E splits across two Playwright projects: `desktop-chromium` (17 boot specs, 3
 deployed-Pages specs, 7 visual captures) and `android-phone-landscape` (17 boot
@@ -56,9 +66,12 @@ screen at any point.
 
 **The shipped game is: boot → capability probe → title screen. Nothing else.**
 
-At commit `4b87354`, only **13 of the 50 TypeScript modules under `src/`** were
-reachable from `src/main.ts`. This wave added one module (`SequenceSystem.ts`),
-bringing the total to 51, and did not change the reachable count: it is still 13.
+`src/` now holds **54 TypeScript modules, of which 13 are reachable** from
+`src/main.ts`. Wave 2 added three (`voiceSchema.ts`, `localizationSchema.ts`,
+`StringTable.ts`) and, like Wave 1, changed the reachable count not at all.
+Verified rather than assumed: `grep -rl` finds no reference to any of the three
+from outside their own directory, and none of `voiceSchema`, `StringTable`,
+`localization` or `vo-manifest` appears anywhere in `dist/assets/index-*.js`.
 
 The reachable set, in full:
 
@@ -240,25 +253,83 @@ that loads a shipped content file rather than an inline fixture.
 
 ## Content reality
 
-**42 authored spoken dialogue lines against a 300–380 target: roughly 12%.**
+**72 authored spoken dialogue lines against a 300–380 target: roughly 20%.**
 
 | Speaker | Lines | Target (spec) |
 | --- | --- | --- |
 | Sera Holt | 16 | 80–100 |
-| Mara Venn | 14 | 70–90 |
+| Dax Ren | 16 | 60–80 |
+| Mara Venn | 19 | 70–90 |
 | Ivo Saye | 12 | 65–85 |
-| **Dax Ren** | **0** | 60–80 |
+| Noor (minor) | 5 | 2–8 |
+| Renna (minor) | 4 | 2–8 |
 
-Counted from the two committed dialogue files: `prologue_depot.json` (26 nodes —
-Ivo 12, Mara 8, Sera 6) and `prologue_bridge.json` (16 nodes — Sera 10, Mara 6).
-Every node has a speaker, so nodes and spoken lines are the same number here.
+Counted from three committed dialogue files: `prologue_depot.json` (26 nodes),
+`prologue_bridge.json` (16), and `act1_perimeter_contact.json` (30, added this
+wave). Every node has a speaker, so nodes and spoken lines are the same number.
 
-Dax Ren is not a speaker and not listed in the `participants` array of either
-scene. He does not exist in the game's content in any form.
+**Dax Ren now exists.** He had zero lines and appeared in no `participants` array;
+`act1_perimeter_contact` is his introduction — 16 nodes, three interruptible lines
+on three distinct world events, and a three-option branch that moves trust in both
+directions. `tests/unit/daxDialogue.test.ts` (23 tests) is the first test in the
+repository that guards a *shipped* dialogue file rather than an inline fixture:
+it pins the interrupts as load-bearing (each must route somewhere the
+uninterrupted line does not), the branch as consequential (distinct flag sets per
+option), and the anti-slop properties.
 
-**Zero dialogue nodes carry an `audio` field.** No line is voiced, and no
-build-time voice pipeline exists — `edge-tts` is described in `README.md` and
-`ASSET_LICENSES.md` but appears nowhere in `scripts/` or `package.json`.
+Still zero of the four minor NPCs from the depot roster (`teo`, `luz`, `abe`,
+`kit`, `paulo`, `wen`) have any lines, and Acts II–III, the Finale and the Epilogue
+have no content of any kind.
+
+### Voice pipeline — built and run
+
+`scripts/vo/generate_vo.py` implements all six stages spec §20.4 asks for, and
+has been run against all 72 lines. Every line has a distinct-voiced take, a
+word-timed WebVTT cue file, and a manifest entry.
+
+| Measured | Value |
+| --- | --- |
+| Lines synthesised | 72 / 72 |
+| Total speech | 359.7 s (6 min) |
+| Voices | 12 configured (one per `SpeakerId`), 6 in use — only 6 characters have lines yet |
+| Audio produced | 2.10 MB local, mono MP3 48 kbit/s @ 24 kHz (~30 KB/line, so ~11 MB at the 380-line target) |
+| Loudness | EBU R128 two-pass, −19 LUFS, −1.5 dBTP |
+| Delivery channels | `direct` and `radio`; Sera is routed to `radio` in both prologue scenes by per-scene override |
+
+Two findings worth recording, because both were invisible before anything was
+measured:
+
+1. **The hand-authored `duration` estimates run short.** They were derived from
+   word counts at 2.5–3.2 words/second, a model with no term for sentence-final
+   pauses, and the synthesiser inserts roughly half a second at each full stop.
+   Median measured/authored ratio is 0.92 and the full range is 0.49–1.57, so the
+   estimates are usable as fallback timing — but two short, heavily punctuated
+   lines overrun badly, both of them
+   Dax catching himself: `"—sorry. That was five questions. I do that."` (8 words,
+   3 sentences, 3.2 s estimated, 4.6 s measured) and `"That's the gate. Fine.
+   Slower."` (5 words, 3 sentences, 2.4 s vs 3.8 s). A test asserts that
+   *everything* overrunning by more than 35% is short and multi-sentence, so a
+   long line drifting would fail — which is what a global rate mistake would look
+   like.
+2. **A single-stage ffmpeg biquad is not audible as a radio.** The first radio
+   channel measured only 3 dB of high-frequency reduction against a direct take,
+   because `highpass`/`lowpass` cap at 2 poles (~12 dB/octave). Cascading two
+   stages per side gives ~24 dB/octave and measures 6.9 dB down above 4 kHz, which
+   is the point at which it reads as a handheld rather than as a subtle EQ.
+
+**No dialogue node carries an `audio` field, and that is deliberate.** Scene JSON
+stays clean and the manifest is the index, keyed `<sceneId>__<nodeId>`. Writing
+paths into the scenes would make `lint:assets` warn on all 72 lines in CI, where
+the audio is intentionally absent.
+
+**The generated audio is not committed** (`edge-tts` output carries no
+redistribution licence; spec §20.5). The committed artefacts are the generator,
+`content/voices/cast.json`, and `content/dialogue/vo-manifest.json`. Consequence,
+stated plainly: **the GitHub Pages build has no voice-over.** Subtitles and
+authored timings work, so the campaign is completable and readable silently, but
+audio requires a local run of the pipeline. `ASSET_LICENSES.md` documents the
+reasoning; `pnpm vo:check` is the CI-safe gate that verifies the manifest matches
+the content by hash with no network access.
 
 Other content:
 
@@ -303,7 +374,7 @@ player.
 
 | Suite | Files | Tests | Status |
 | --- | --- | --- | --- |
-| Unit | 25 | 1,261 | pass |
+| Unit | 30 | 1,565 | pass |
 | Integration | 2 | 97 | pass (real Rapier WASM, real Recast) |
 | Saves | 1 | 68 | pass (`fake-indexeddb` substitutes the platform API only) |
 | Browser E2E | 2 files, 2 projects | 41 pass, 6 skip | skips are the live-Pages specs |
@@ -411,12 +482,12 @@ Per spec §40. The data model, the validators and the sequence player exist. The
 campaign does not.
 
 - [ ] Prologue fully playable — *no content loader; no `playing` state*
-- [ ] All four main characters introduced naturally — *Dax Ren has 0 lines and appears nowhere*
+- [~] All four main characters introduced naturally — *all four are now authored; Dax's introduction is `act1_perimeter_contact`. None is reachable by a player.*
 - [ ] Acts I–III playable start to finish — *no content authored*
 - [ ] Finale playable — *no content authored*
 - [ ] Three final choices functional — *not authored*
 - [ ] Three epilogue variations functional — *not authored*
-- [ ] Dialogue audio + synchronised subtitles — *`Subtitles` has 40 tests and is unwired; 0 nodes have an `audio` field; no voice pipeline exists*
+- [~] Dialogue audio + synchronised subtitles — *the pipeline exists and has voiced all 72 lines with word-timed VTT cues; `Subtitles` (40 tests) is still unwired and nothing loads a manifest at runtime, so no player has heard a word*
 - [ ] No placeholder dialogue — *the 42 authored lines pass the anti-slop validators; there are simply far too few of them*
 - [ ] Major beats have authored cinematic treatment — *1 sequence authored (`prologue_cold_open`, 8 tracks), played only against test doubles*
 - [ ] Player understands the 37-minute timeline without an exposition dump — *untestable: no player can reach any of it*
@@ -427,10 +498,14 @@ Story bible: `.kiro/steering/narrative.md`.
 
 ## Next tasks
 
-**The integration layer is the critical path.** 38 of 51 modules are not in the
-shipped bundle, and the overwhelming majority of the 1,426 passing tests describe
-code a player cannot reach — only `settings.test.ts` (34) and
-`qualityPresets.test.ts` (46) target modules that are actually in the artefact.
+**The integration layer is the critical path, and two waves of subsystem work have
+not moved it.** 41 of 54 modules are not in the shipped bundle, and the
+overwhelming majority of the 1,730 passing tests describe code a player cannot
+reach — only `settings.test.ts` (34) and `qualityPresets.test.ts` (46) target
+modules that are actually in the artefact. Wave 2 voiced 72 lines of dialogue that
+nothing can play and resolved 53 message ids that nothing can display; both are
+real, tested work, and both stay invisible until items 1–3 land. That is the
+honest read: **the next wave should be integration, not more content.**
 Every other item on this list is blocked behind integration, and no amount of
 additional isolated subsystem work changes what a player can do.
 
@@ -449,8 +524,16 @@ additional isolated subsystem work changes what a player can do.
 4. **Author the first real sector.** `public/assets/sectors` is empty, so there is
    no geometry to spawn into and `StreamingSystem`'s 41 tests all run against
    fixtures.
-5. **Populate `content/localization`** so the nine tutorial `messageKey`s resolve
-   to text.
+5. ~~**Populate `content/localization`**~~ — **done this wave.** 53 message ids
+   cover all 9 shipped tutorial keys, all 16 registry keys with escalation
+   variants, and the 15 input action labels. `StringTable` resolves them. Still
+   unwired: `TutorialSystem` emits a `messageKey` and no HUD reads it, so the keys
+   resolve but a player sees nothing.
+5b. **Load the VO manifest at runtime.** `content/dialogue/vo-manifest.json` maps
+   `<sceneId>__<nodeId>` to a clip path, a measured duration and a VTT cue file,
+   and `voiceClipId()` is the binding function. Nothing calls it. This is the
+   smallest remaining step to a voiced line, and it depends on the content loader
+   (item 2), not on the pipeline.
 6. **Wire `Hud`, `Subtitles` and `DiagnosticsOverlay`,** and give
    `DiagnosticsOverlay` its first test. Hook `?diagnostics=1`, which is documented
    in `flags.ts` and read nowhere.
@@ -465,8 +548,15 @@ additional isolated subsystem work changes what a player can do.
 10. **Resolve the look-axis convention seam** before the camera ships: mouse
     reports displacement, stick reports rate, both land on `lookX`/`lookY`, and
     `InputState` clamps to ±1. The camera owner must pick one.
-11. **Give `waterMaterial` a test,** or delete it. It is the only module in the
-    repository that has never been executed by anything.
+11. ~~**Give `waterMaterial` a test**~~ — **done this wave** (25 tests), along with
+    `DiagnosticsOverlay` (85). No module in the repository is now unexecuted. The
+    water material had no defects; the overlay had two, both fixed at root cause
+    and both negative-controlled. One gap left behind deliberately:
+    `src/ui/styles/diagnostics.css` is imported nowhere, so it is outside the Vite
+    graph and `.diag--hidden` would not actually hide the panel once wired.
+12b. **Author the six remaining minor NPCs** (`teo`, `luz`, `abe`, `kit`, `paulo`,
+    `wen`). All six have a cast voice waiting and no lines; `wen` is the only
+    character whose default delivery channel is `radio`.
 12. **Measure something on real hardware.** Every performance and platform claim
     in this document that is not marked verified is waiting on a device.
 

@@ -213,9 +213,25 @@ source, author and licence for every file. Only redistributable assets are
 committed. At present the only committed assets are the five generated PWA icons;
 `public/assets/` is empty.
 
-A voice pipeline is planned rather than built: there is currently no TTS script in
-`scripts/`, and no dialogue line carries an audio reference. The intended
-generator, `edge-tts`, is an unofficial client for an online Microsoft service and
-does not itself grant a commercial voice licence, so when it lands it will sit
-behind a replaceable adapter. Voice terms must be reviewed before any commercial
-distribution.
+### Voice-over
+
+The build-time voice pipeline is implemented in `scripts/vo/generate_vo.py`. It
+reads the authored dialogue, synthesises one take per line with a distinct voice
+per character, generates word-timed WebVTT cues, runs an EBU R128 loudness and
+format pass, and writes `content/dialogue/vo-manifest.json`.
+
+```bash
+python -m pip install -r scripts/vo/requirements.txt
+pnpm generate:vo          # synthesise whatever is stale
+pnpm vo:check             # offline freshness gate, no network access
+```
+
+The generated audio is **not committed.** `edge-tts` is an unofficial client for
+Microsoft Edge's online speech service and grants no redistribution licence, so
+the repository ships the generator and the manifest instead — see
+[`ASSET_LICENSES.md`](ASSET_LICENSES.md) for the full reasoning and its
+consequences. The practical effect is that the deployed Pages build has subtitles
+and authored line timings but no audio; run the pipeline locally to hear it. The
+provider sits behind a `SpeechBackend` adapter so an offline model with a
+compatible licence can replace it without touching the manifest format or `src/`.
+Voice terms must be reviewed before any commercial distribution.

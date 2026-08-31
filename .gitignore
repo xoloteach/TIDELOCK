@@ -18,6 +18,14 @@ tests/visual/**/*-diff.png
 benchmark-results/
 *.tsbuildinfo
 
+# Generated voice-over. Reproducible with `pnpm generate:vo`, and deliberately
+# not committed: edge-tts output comes from Microsoft's online speech service,
+# which grants no redistribution licence (spec 20.5). ASSET_LICENSES.md rule 1
+# says a non-redistributable asset ships as the script that makes it, not as the
+# asset. The manifest at content/dialogue/vo-manifest.json *is* committed — it is
+# our own data, and it is what makes regeneration incremental.
+public/assets/audio/dialogue/
+
 # Editor
 .vscode/*
 !.vscode/extensions.json

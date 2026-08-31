@@ -25,6 +25,8 @@
     "test:saves": "vitest run tests/saves",
     "lint:assets": "tsx scripts/validate-assets.ts",
     "generate:icons": "tsx scripts/generate-icons.ts",
+    "generate:vo": "python3 scripts/vo/generate_vo.py",
+    "vo:check": "python3 scripts/vo/generate_vo.py --check",
     "verify": "pnpm typecheck && pnpm test && pnpm lint:assets && pnpm build",
     "ci": "pnpm verify && pnpm test:e2e"
   },

@@ -21,6 +21,36 @@ const PUBLIC_PWA = join(ROOT, 'public', 'pwa');
 const CONTENT_DIR = join(ROOT, 'content');
 const LICENSE_MANIFEST = join(ROOT, 'ASSET_LICENSES.md');
 
+/**
+ * Trees that are generated, gitignored, and therefore exempt from a per-file
+ * licence record.
+ *
+ * `public/assets/audio/dialogue` holds build-time voice-over. It is reproducible
+ * with `pnpm generate:vo`, and it is deliberately not committed because
+ * `edge-tts` output comes from Microsoft's online speech service and carries no
+ * redistribution licence (spec 20.5) — which is exactly the case ASSET_LICENSES
+ * rule 1 covers: ship the script, not the asset.
+ *
+ * Exempting it is not a hole in the gate. Without this, `pnpm lint:assets` fails
+ * on a developer machine that has run the pipeline and passes in CI where the
+ * files are absent — the worst possible split, because the gate would be green
+ * precisely where nobody can check it. The directory is still size- and
+ * format-checked by `checkRuntimeAssets`; it is only the attribution record that
+ * does not apply, and `checkGeneratedTreesAreIgnored` asserts the exemption is
+ * backed by a real .gitignore entry so it cannot be used to smuggle in an
+ * unattributed asset.
+ */
+const GENERATED_TREES: readonly { path: string; ignoreEntry: string }[] = [
+  {
+    path: join('assets', 'audio', 'dialogue'),
+    ignoreEntry: 'public/assets/audio/dialogue/',
+  },
+];
+
+function isGenerated(file: string): boolean {
+  return GENERATED_TREES.some((tree) => relative(ROOT, file).includes(tree.path));
+}
+
 /** Texture edge length that should never appear in a runtime asset. */
 const MAX_TEXTURE_EDGE = 4096;
 /** Largest single runtime file we accept without an explicit justification. */
@@ -236,10 +266,53 @@ async function checkLicenceRecords(): Promise<void> {
   for (const file of files) {
     const ext = extname(file).toLowerCase();
     if (!NEEDS_RECORD.has(ext)) continue;
+    // Generated, gitignored trees are recorded as a tree, not per file.
+    if (isGenerated(file)) continue;
 
     const name = basename(file);
     if (!manifest.includes(name)) {
       error(`${relative(ROOT, file)} has no entry in ASSET_LICENSES.md`);
+    }
+  }
+
+  for (const tree of GENERATED_TREES) {
+    if (!manifest.includes(tree.ignoreEntry)) {
+      error(
+        `ASSET_LICENSES.md does not document the generated tree ${tree.ignoreEntry}, ` +
+          `which is exempt from per-file licence records`,
+      );
+    }
+  }
+}
+
+/**
+ * Verifies every licence-exempt tree is actually gitignored.
+ *
+ * The exemption above is only defensible while the files genuinely are not
+ * committed. If somebody removes the .gitignore entry, unattributed binaries
+ * start landing in a public MIT repository and the licence gate would say
+ * nothing — so the gate checks its own premise.
+ */
+async function checkGeneratedTreesAreIgnored(): Promise<void> {
+  const gitignorePath = join(ROOT, '.gitignore');
+  if (!existsSync(gitignorePath)) {
+    error('.gitignore is missing, so generated asset trees are not protected');
+    return;
+  }
+  const gitignore = await readFile(gitignorePath, 'utf8');
+  const entries = new Set(
+    gitignore
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0 && !line.startsWith('#')),
+  );
+
+  for (const tree of GENERATED_TREES) {
+    if (!entries.has(tree.ignoreEntry)) {
+      error(
+        `${tree.ignoreEntry} is exempt from licence records but is not in .gitignore; ` +
+          `either ignore it or record every file in ASSET_LICENSES.md`,
+      );
     }
   }
 }
@@ -325,6 +398,7 @@ async function main(): Promise<void> {
 
   await checkRuntimeAssets();
   await checkLicenceRecords();
+  await checkGeneratedTreesAreIgnored();
   await checkContentJson();
 
   for (const w of warnings) console.log(`  warn   ${w}`);

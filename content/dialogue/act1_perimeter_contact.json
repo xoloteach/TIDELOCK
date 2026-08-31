@@ -1,0 +1,288 @@
+{
+  "sceneId": "act1_perimeter_contact",
+  "title": "Residential edge — the taped line above Station Twelve",
+  "act": "act1",
+  "tier": "focused",
+  "participants": ["mara", "dax", "noor", "renna"],
+  "entry": "dax_third_time",
+  "once": true,
+  "skippable": true,
+  "availableWhen": {
+    "kind": "and",
+    "all": [
+      { "kind": "flagSet", "flag": "crossed_service_bridge" },
+      { "kind": "flagSet", "flag": "pulse_tool_issued" }
+    ]
+  },
+  "nodes": [
+    {
+      "id": "dax_third_time",
+      "speaker": "dax",
+      "text": "Third time I've asked. Who signed the closure on Cluster B? A name, not a department.",
+      "duration": 5.4,
+      "next": "noor_taped_line"
+    },
+    {
+      "id": "noor_taped_line",
+      "speaker": "noor",
+      "text": "And third time I've answered. You're standing inside a taped line I didn't tape.",
+      "duration": 5.0,
+      "next": "dax_north_mouth"
+    },
+    {
+      "id": "dax_north_mouth",
+      "speaker": "dax",
+      "text": "You came through the north mouth on your own. That gate's rated for two. So who lifted the other half?",
+      "duration": 7.0,
+      "next": "mara_gate_lifts"
+    },
+    {
+      "id": "mara_gate_lifts",
+      "speaker": "mara",
+      "text": "It lifts for one. Slowly.",
+      "duration": 2.2,
+      "next": "noor_sheet"
+    },
+    {
+      "id": "noor_sheet",
+      "speaker": "noor",
+      "text": "Venn. You're on my sheet for eleven, and it's twenty past.",
+      "duration": 4.2,
+      "next": "dax_ledger"
+    },
+    {
+      "id": "dax_ledger",
+      "speaker": "dax",
+      "text": "Dax Ren. I print the Quay Ledger — four pages and a photocopier. Cluster B, night of the surge: two of three pumps off at 02:31. Whose order?",
+      "duration": 10.0,
+      "next": "mara_here_for_pump"
+    },
+    {
+      "id": "mara_here_for_pump",
+      "speaker": "mara",
+      "text": "Mara Venn. I'm here for a pump.",
+      "duration": 2.6,
+      "next": "noor_permit"
+    },
+    {
+      "id": "noor_permit",
+      "speaker": "noor",
+      "text": "Nobody's order. The permit on this site says recovery contractor, three crew, daylight hours. Visitors clear through the borough office on Kell Street, which is shut, which is why nobody—",
+      "duration": 10.6,
+      "next": "dax_kell_street",
+      "interrupts": [
+        {
+          "event": "world.pump-12-load-shed",
+          "target": "dax_cut_noise",
+          "earliest": 2.6
+        }
+      ]
+    },
+    {
+      "id": "dax_cut_noise",
+      "speaker": "dax",
+      "text": "—hear that? Third time it's done that since I got here. Write down what it was and I'll wait.",
+      "duration": 7.0,
+      "next": "renna_surfaces"
+    },
+    {
+      "id": "dax_kell_street",
+      "speaker": "dax",
+      "text": "—which is why nobody has to answer anything. Kell Street. Give me the name of one person who is at Kell Street.",
+      "duration": 7.8,
+      "next": "renna_surfaces"
+    },
+    {
+      "id": "renna_surfaces",
+      "speaker": "renna",
+      "text": "Noor. Guide vane's fouled on twelve and my torch is under two feet of water.",
+      "duration": 5.4,
+      "next": "dax_half_past"
+    },
+    {
+      "id": "dax_half_past",
+      "speaker": "dax",
+      "text": "You were down there on the night. Were you on shift at half past two?",
+      "duration": 5.4,
+      "next": "renna_not_on_paper"
+    },
+    {
+      "id": "renna_not_on_paper",
+      "speaker": "renna",
+      "text": "I was on the pumps. I'm not on your paper.",
+      "duration": 3.8,
+      "next": "renna_tap"
+    },
+    {
+      "id": "renna_tap",
+      "speaker": "renna",
+      "text": "They didn't trip, though. I've heard them trip. These eased off, one after another, ten seconds apart. Like somebody turning a tap down.",
+      "duration": 8.4,
+      "next": "dax_rush"
+    },
+    {
+      "id": "dax_rush",
+      "speaker": "dax",
+      "text": "Ten seconds apart is a sequence, that isn't weather, somebody typed that, so who was on the desk, was it the optimizer or was it a person, because the report says overcurrent and overcurrent doesn't count to ten—",
+      "duration": 13.0,
+      "next": "dax_catch",
+      "interrupts": [
+        {
+          "event": "world.gate-klaxon",
+          "target": "dax_klaxon_catch",
+          "earliest": 3.2
+        }
+      ]
+    },
+    {
+      "id": "dax_catch",
+      "speaker": "dax",
+      "text": "—sorry. That was five questions. I do that.",
+      "duration": 3.2,
+      "next": "mara_ramp"
+    },
+    {
+      "id": "dax_klaxon_catch",
+      "speaker": "dax",
+      "text": "That's the gate. Fine. Slower.",
+      "duration": 2.4,
+      "next": "mara_ramp"
+    },
+    {
+      "id": "mara_ramp",
+      "speaker": "mara",
+      "text": "Ten seconds is a ramp. Not a breaker.",
+      "duration": 3.0,
+      "next": "dax_paper_set"
+    },
+    {
+      "id": "dax_paper_set",
+      "speaker": "dax",
+      "text": "You're carrying a paper set with wet corners. Holt doesn't ask for paper when the tablet's right. Does the valve schedule match?",
+      "duration": 7.8,
+      "choices": [
+        {
+          "id": "c_confirm",
+          "text": "It doesn't match.",
+          "target": "dax_anonymous",
+          "effects": [
+            {
+              "kind": "setFlag",
+              "flag": "mara_confirmed_map_discrepancy",
+              "value": true
+            },
+            { "kind": "setFlag", "flag": "dax_has_mara_on_record", "value": true },
+            { "kind": "adjustTrust", "character": "dax", "delta": 1 }
+          ]
+        },
+        {
+          "id": "c_deflect",
+          "text": "Ask whoever updated it.",
+          "target": "dax_sounds_like_office",
+          "effects": [
+            { "kind": "setFlag", "flag": "mara_deflected_to_sera", "value": true },
+            { "kind": "adjustTrust", "character": "dax", "delta": -1 }
+          ]
+        },
+        {
+          "id": "c_shield",
+          "text": "Keep her name out of it and I'll walk you to the gate.",
+          "target": "dax_trade",
+          "effects": [
+            { "kind": "setFlag", "flag": "mara_shielded_renna", "value": true },
+            { "kind": "setFlag", "flag": "dax_denied_witness_name", "value": true },
+            { "kind": "adjustTrust", "character": "renna", "delta": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dax_anonymous",
+      "speaker": "dax",
+      "text": "Doesn't match. Good. I'll print \"a municipal technician on site\" and you'll hate that, and it'll still be true.",
+      "duration": 6.8,
+      "next": "noor_my_name"
+    },
+    {
+      "id": "dax_sounds_like_office",
+      "speaker": "dax",
+      "text": "\"Whoever updated it.\" Not \"they match.\" Not \"the tablet's fine.\" You've been inside the seal ten minutes and you already sound like the office.",
+      "duration": 8.4,
+      "next": "noor_my_name"
+    },
+    {
+      "id": "dax_trade",
+      "speaker": "dax",
+      "text": "Her name for a walk to a gate I got over on my own. Fine. Keep her. I'll take the ten seconds.",
+      "duration": 8.0,
+      "next": "noor_my_name"
+    },
+    {
+      "id": "noor_my_name",
+      "speaker": "noor",
+      "text": "Take what you like. Mine's the name on the site form — twelve years of licence, and my daughter sits her tickets in spring on my references. That's what the tape is.",
+      "duration": 11.2,
+      "next": "renna_cat"
+    },
+    {
+      "id": "renna_cat",
+      "speaker": "renna",
+      "text": "I'm taking the spare torch. And Noor — something's living in the crew van. It's been at your seat.",
+      "duration": 6.6,
+      "next": "mara_pulse"
+    },
+    {
+      "id": "mara_pulse",
+      "speaker": "mara",
+      "text": "Stand off the plate. I'm pulsing the feeder.",
+      "duration": 3.0,
+      "next": "dax_two_fourteen"
+    },
+    {
+      "id": "dax_two_fourteen",
+      "speaker": "dax",
+      "text": "Before you do. The borough report gives me 02:14, then it gives me 03:06. In between I have four dispatch calls with receipts and not one of them is on that page.",
+      "duration": 11.4,
+      "next": "dax_oh_two_four_seven",
+      "interrupts": [
+        {
+          "event": "world.maintenance-unit-arrives",
+          "target": "noor_work_order",
+          "earliest": 3.0
+        }
+      ]
+    },
+    {
+      "id": "dax_oh_two_four_seven",
+      "speaker": "dax",
+      "text": "So read what the log says the pump did at 02:47. Then tell me whether it matches what she just described—",
+      "duration": 7.4,
+      "next": "noor_work_order"
+    },
+    {
+      "id": "noor_work_order",
+      "speaker": "noor",
+      "text": "That's a survey pulse. Now we all stand here with a maintenance unit until somebody cancels it.",
+      "duration": 6.0,
+      "next": "mara_it_was_me"
+    },
+    {
+      "id": "mara_it_was_me",
+      "speaker": "mara",
+      "text": "It was me. It can stand.",
+      "duration": 2.4,
+      "next": "dax_aldis_row"
+    },
+    {
+      "id": "dax_aldis_row",
+      "speaker": "dax",
+      "text": "Aldis Row. The stairwell behind the laundrette, second landing, above the water. If that log says overcurrent, come and tell me so. If it doesn't — come faster.",
+      "duration": 9.8,
+      "next": null
+    }
+  ],
+  "onEnd": [
+    { "kind": "setFlag", "flag": "dax_first_contact_made", "value": true },
+    { "kind": "setFlag", "flag": "renna_ramp_account_heard", "value": true }
+  ]
+}
