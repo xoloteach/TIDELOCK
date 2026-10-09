@@ -1,0 +1,56 @@
+name: Godot build and playtest
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      XDG_DATA_HOME: ${{ github.workspace }}/.godot-tools/data
+      XDG_CONFIG_HOME: ${{ github.workspace }}/.godot-tools/config
+      XDG_CACHE_HOME: ${{ github.workspace }}/.godot-tools/cache
+      CHROMIUM_PATH: ''
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/cache@v4
+        with:
+          path: .godot-tools/data/godot
+          key: godot-linux-web-4.7.2-${{ hashFiles('scripts/godot/install.py') }}
+      - name: Import, test campaign, and export the game
+        run: bash scripts/godot/build.sh
+      - name: Install browser runner
+        run: |
+          npm install --prefix "$RUNNER_TEMP/tidelock-tests" playwright@1.57.0
+          "$RUNNER_TEMP/tidelock-tests/node_modules/.bin/playwright" install chromium --with-deps
+          echo "NODE_PATH=$RUNNER_TEMP/tidelock-tests/node_modules" >> "$GITHUB_ENV"
+      - name: Play through the web game and test touch controls
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory dist > /tmp/tidelock-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid"' EXIT
+          node scripts/godot/smoke.cjs
+          python3 scripts/godot/migration-server.py > /tmp/tidelock-migration-server.log 2>&1 &
+          migration_pid=$!
+          trap 'kill "$server_pid" "$migration_pid" || true' EXIT
+          node scripts/godot/migration.cjs
+      - name: Upload playtest evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: godot-playtest-evidence
+          path: test-results/godot
+          if-no-files-found: ignore
+      - name: Upload verified web build
+        uses: actions/upload-artifact@v4
+        with:
+          name: godot-web
+          path: dist
+          include-hidden-files: true

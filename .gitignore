@@ -35,3 +35,7 @@ public/assets/audio/dialogue/
 .env
 .env.local
 .env.*.local
+
+# Godot import/editor cache (sources and .uid files stay tracked)
+godot/.godot/
+.godot-tools/

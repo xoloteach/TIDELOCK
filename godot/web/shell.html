@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#102226">
+<meta name="description" content="Explore Morrow Quay, restore three flood pumps, outmaneuver maintenance machines, and bring the harbor back by hand. A first-person 3D Godot browser game with mouse, keyboard and touch controls.">
+<title>TIDELOCK — Morrow Quay</title>
+<link rel="icon" type="image/png" href="index.icon.png">
+<link rel="apple-touch-icon" href="index.apple-touch-icon.png">
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:#102226;color:#e6e4cc;font-family:system-ui,sans-serif;overflow:hidden}canvas{display:block;outline:none;touch-action:none;width:100%;height:100%}#loading{position:fixed;inset:0;display:grid;place-content:center;padding:32px;background:#102226;z-index:2}.eyebrow{color:#e2b46a;font-size:12px;letter-spacing:.19em}h1{font-size:clamp(40px,9vw,100px);font-weight:600;letter-spacing:-.06em;margin:20px 0 6px}p{color:#94aba5;font-size:16px;max-width:560px;line-height:1.6}progress{display:block;width:min(520px,80vw);height:5px;accent-color:#e2b46a;margin-top:30px}#status{font-size:13px;color:#e2b46a}#rotate{display:none;position:fixed;bottom:12px;left:12px;right:12px;padding:12px;text-align:center;background:#102226ed;font-size:13px;color:#e2b46a;pointer-events:none;z-index:3}@media(orientation:portrait) and (pointer:coarse){#rotate{display:block}}button{background:#e2b46a;color:#102226;border:0;padding:12px 20px;font:inherit;cursor:pointer}a{color:#e2b46a}#failure{display:none;white-space:pre-wrap;max-width:560px}#loading.hidden{display:none}
+</style>
+$GODOT_HEAD_INCLUDE
+</head>
+<body>
+<canvas id="canvas" tabindex="0" aria-label="TIDELOCK first-person 3D harbor game. Mouse or touch swipe to look, F for flashlight. WASD or arrows to move, E to interact, Q to pulse, Shift to run, Tab for journal, Escape to pause.">Your browser needs WebGL 2 and WebAssembly to play TIDELOCK.</canvas>
+<section id="loading" aria-live="polite"><div class="eyebrow">BOROUGH FLOOD CONTROL / FIELD EDITION</div><h1>TIDELOCK</h1><p>The city left. The water didn't.<br>Loading Morrow Quay's recovery shift.</p><progress id="progress" max="100" value="0"></progress><p id="status">Preparing the harbor…</p><p id="failure"></p></section>
+<div id="rotate">Rotate your phone to landscape for the full harbor view.</div>
+<script src="$GODOT_URL"></script>
+<script>
+const GODOT_CONFIG = $GODOT_CONFIG;
+const engine = new Engine(GODOT_CONFIG);
+window.tidelockErrors = [];
+const loading = document.getElementById('loading');
+const progress = document.getElementById('progress');
+const status = document.getElementById('status');
+function fail(error){const message=String(error);window.tidelockErrors.push(message);console.error(message);document.getElementById('failure').style.display='block';document.getElementById('failure').textContent='The harbor could not start. '+message+'\nTry a current Chrome, Edge, Firefox or Safari browser with WebGL 2 enabled.';status.textContent='Startup failed';}
+const missing = Engine.getMissingFeatures({threads:false});
+if(missing.length){fail('Missing browser features: '+missing.join(', '));}else{
+engine.startGame({canvas:document.getElementById('canvas'),onProgress:(current,total)=>{if(total>0){progress.value=current/total*100;status.textContent='Loading harbor / '+Math.floor(current/total*100)+'%';}},onPrintError:(message)=>{console.error(message);window.tidelockErrors.push(message);}}).then(()=>{loading.classList.add('hidden');document.getElementById('canvas').focus();}).catch(fail);
+}
+window.addEventListener('keydown',e=>{if(['Tab','ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();});
+</script>
+</body>
+</html>

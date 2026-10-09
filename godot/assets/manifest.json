@@ -1,0 +1,146 @@
+[
+  {
+    "path": "concrete/Color.jpg",
+    "sha256": "6bf11ddad96a2db2638f0fd2e4d129c266b3a3bfc1114e2fbae3e20c88f88f57"
+  },
+  {
+    "path": "concrete/License.txt",
+    "sha256": "c94717093dd35db55b892b70ff74709ed1f515f2e13d03543603f9e4b709077b"
+  },
+  {
+    "path": "concrete/NormalGL.jpg",
+    "sha256": "2467fd294fe69c1dcb969d5c141eca13ac0acda9915f9b0842405f493b82cd4e"
+  },
+  {
+    "path": "concrete/Roughness.jpg",
+    "sha256": "9963905b22554fd82f7fa98e3f2280a05390184eb9d1086033949478a5164329"
+  },
+  {
+    "path": "impact/License.txt",
+    "sha256": "b49aa9c56b04528b95913de13e506a0f7c5e807b9925db9bfef86af1f91120db"
+  },
+  {
+    "path": "impact/footstep_concrete_000.ogg",
+    "sha256": "d7267e183067757c92c169de2a379abea592cfca6b39bb2e8feea15221ad79fe"
+  },
+  {
+    "path": "impact/footstep_concrete_001.ogg",
+    "sha256": "507a75eb19b897087855a3be3cf11a12d7fa37d143ad535eeebe0b8031c7325d"
+  },
+  {
+    "path": "impact/footstep_concrete_002.ogg",
+    "sha256": "b21fa546d74941196b25da8a20b7010abd8c05c4fcf93545d1f344e66a664e13"
+  },
+  {
+    "path": "impact/impactMetal_heavy_000.ogg",
+    "sha256": "e07045693e4a2b3d165c424e3dab4c781d9ff8880a386880ac89a51315d7f831"
+  },
+  {
+    "path": "industrial/License.txt",
+    "sha256": "60a8c5c31191256ec9779dc18745dea6d69c46f4b29703459ce064c1765a59ea"
+  },
+  {
+    "path": "industrial/Textures/colormap.png",
+    "sha256": "950f4f891ebd05a2affac810e6eeb0fea1511bc39039b65a3cbf2e17d17bc6a2"
+  },
+  {
+    "path": "industrial/building-a.glb",
+    "sha256": "0e6ef8eb1e1bdbb9d06b5496b5daf3066e00eaf74b3fcd61b74072116a1c86cf"
+  },
+  {
+    "path": "industrial/building-c.glb",
+    "sha256": "94eb05acef8d8e4c1d817eb12e1c2a1287ffed625879170663a8c4f48786b465"
+  },
+  {
+    "path": "industrial/building-f.glb",
+    "sha256": "05a91ab02f424ca4f4819c1749e014bc4404cdf2a75242190c066bb24b59cde7"
+  },
+  {
+    "path": "industrial/building-i.glb",
+    "sha256": "12d9be598becf2b6d3758d23aba6c573ca2701fca5e77870d2ee5645647765ca"
+  },
+  {
+    "path": "industrial/building-l.glb",
+    "sha256": "86f03eb0b0c5882c59de79b505ffba4377a9b4591588215aa880ab6362087066"
+  },
+  {
+    "path": "industrial/building-o.glb",
+    "sha256": "eec5728a268e122da91fa2cc4ed571a0b12e2cdd5c200828ab0d4f31ab1c8765"
+  },
+  {
+    "path": "industrial/building-r.glb",
+    "sha256": "3bf50032b629c97e249a9219851fd385347608bcb896c5bed06870e3957de5fe"
+  },
+  {
+    "path": "industrial/building-t.glb",
+    "sha256": "865f92dc0ca0ce147c2b784bfda0773698e80896c372146e2b53811f1758607f"
+  },
+  {
+    "path": "industrial/chimney-large.glb",
+    "sha256": "fd88d6c971ffb27f5ee5b0df9f7c23ac82f9b6d32e85d3e2066f90a62f92f59f"
+  },
+  {
+    "path": "industrial/detail-tank-large.glb",
+    "sha256": "2fbf65dfbae114235dec65cc8730a870cf7d29dd76f9473218e96ee83e9f5f43"
+  },
+  {
+    "path": "industrial/detail-tank.glb",
+    "sha256": "9e955732e4ef9ccff4a4d6967d29d8a7d2f9ed16c903923f2568216d9f0b50d2"
+  },
+  {
+    "path": "industrial/shipping-container-a.glb",
+    "sha256": "7b2d5ca874c8e659ee6cfd1614f0470b70410b2ddc7620ac83b8954dedeb861d"
+  },
+  {
+    "path": "industrial/water-tower.glb",
+    "sha256": "11ac7ae19f32ce889bfe7a9c8e78c8ce8c77b7a76b52fd4ffa439a022ea2ef40"
+  },
+  {
+    "path": "interface/License.txt",
+    "sha256": "f7966c773bbed0eca6a9c75081c44a178b38eae112724dbb5fdfbd4192d118a9"
+  },
+  {
+    "path": "interface/click_001.ogg",
+    "sha256": "ccfb7fa0cccdd9faec0eb16033c732b1e308d139d80f799161495d58f7adcdb9"
+  },
+  {
+    "path": "interface/confirmation_001.ogg",
+    "sha256": "063564703b6094d70718a3e787a55cc9141611e4ecd6b6637f8828f79b4a8c3a"
+  },
+  {
+    "path": "interface/error_001.ogg",
+    "sha256": "46e67425d16339772e8d328fb36a49426c9467418686e11beeb71ff84b0f6433"
+  },
+  {
+    "path": "interface/glitch_001.ogg",
+    "sha256": "da78c642bbd95da2c364ed0e991ebbfc5a4c0d281165d932b5819e0dd31a39d2"
+  },
+  {
+    "path": "particles/License.txt",
+    "sha256": "f9e70b81d8cc07c4e07c9f2eff1d94fd371a06070b18cb67c651c41158ec2975"
+  },
+  {
+    "path": "particles/spark_06.png",
+    "sha256": "fe6d473393d3b9350c7a654b7cb5fbd343766b5b5b11d3e4aba476832d4a6d3f"
+  },
+  {
+    "path": "survival/License.txt",
+    "sha256": "62c8356876481204fa4d40dc59183dfed777adf987d7f2a1390fffe8a699f3ff"
+  },
+  {
+    "path": "survival/Textures/colormap.png",
+    "sha256": "6ca023be9f12e8c2358fcf94320c8a894b4c05a3dd0bad1f5c268312053caca1"
+  },
+  {
+    "path": "survival/barrel.glb",
+    "sha256": "3a0d12f6bdd1badd361f64ce0fbbf878a4ccfc2de8ff1ac4ed4c1aea2a9ee04a"
+  },
+  {
+    "path": "survival/box.glb",
+    "sha256": "346eebd23986793b992ca6e05e9f98d6f5db96a9bfa3aa7c8360ac8b7920def8"
+  },
+  {
+    "path": "survival/tool-hammer.glb",
+    "sha256": "9b27f03c26dabd49a7ea358615e63fe65e1c3d0157887d4ee1ecdfa1f0e688f3"
+  }
+]

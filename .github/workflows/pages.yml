@@ -1,4 +1,4 @@
-name: Pages
+name: Pages — Godot harbor game
 
 on:
   push:
@@ -10,83 +10,27 @@ permissions:
   pages: write
   id-token: write
 
-# Never run two deploys at once, but do not cancel an in-flight deploy either:
-# a half-applied Pages update can serve an index.html referencing chunks that
-# no longer exist.
 concurrency:
   group: pages
   cancel-in-progress: false
 
 jobs:
   build:
-    name: Build and validate
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v7
-
-      # No `version` input: package.json's `packageManager` field is the single
-      # source of truth. Specifying both makes action-setup fail outright.
-      - uses: pnpm/action-setup@v6
-
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      # Deployment gates. A build that fails any of these must not reach Pages,
-      # because the Pages URL is the primary Android playtest channel.
-      - name: Typecheck
-        run: pnpm typecheck
-
-      - name: Unit and integration tests
-        run: pnpm test
-
-      - name: Validate assets and content
-        run: pnpm lint:assets
-
-      - name: Production build
-        run: pnpm build
-
-      - name: Install Playwright Chromium
-        run: pnpm exec playwright install chromium --with-deps
-
-      # Critical smoke test: the built artefact must actually boot and reach the
-      # title screen with no fatal console errors before we publish it.
-      - name: Boot smoke test
-        run: pnpm exec playwright test tests/browser/boot.spec.ts --project=desktop-chromium
-
-      - name: Upload smoke-test report on failure
-        if: failure()
-        uses: actions/upload-artifact@v7
-        with:
-          name: pages-smoke-report
-          path: playwright-report/
-          retention-days: 7
-          if-no-files-found: ignore
-
-      - uses: actions/configure-pages@v6
-
-      - uses: actions/upload-pages-artifact@v5
-        with:
-          path: dist
-
+    uses: ./.github/workflows/godot-build.yml
   deploy:
-    name: Deploy
     needs: build
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-
     steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: godot-web
+          path: dist
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
       - id: deployment
-        uses: actions/deploy-pages@v5
-
-      - name: Report deployed URL
-        run: |
-          echo "Deployed to ${{ steps.deployment.outputs.page_url }}"
-          echo "Commit ${GITHUB_SHA}"
+        uses: actions/deploy-pages@v4
