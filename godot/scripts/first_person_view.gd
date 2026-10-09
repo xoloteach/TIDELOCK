@@ -164,6 +164,7 @@ func _ready() -> void:
 	var names := ["building-a","building-c","building-f","building-i","building-l","building-o","building-r","building-t"]
 	for i in range(HarborData.BUILDINGS.size()):
 		var r: Rect2 = HarborData.BUILDINGS[i]
+		box(self,Vector3(r.size.x/SCALE,0.08,r.size.y/SCALE),world(r.get_center(),0.04),steel)
 		model("industrial/"+names[i],Vector3(r.size.x/SCALE,3.4 if i<3 else 2.4,r.size.y/SCALE),world(r.get_center()))
 		if i<3:
 			label(self,["MORROW QUAY / DEPOT","BOROUGH POWER","NORTH WEIR WORKS"][i],world(r.get_center(),4.3),Color("d8dfcd"),32)

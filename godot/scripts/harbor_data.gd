@@ -42,7 +42,7 @@ static func blocked(p: Vector2, radius: float = 15.0, gate_open: bool = false) -
 	if CANAL.grow(radius).has_point(p):
 		var bridge := false
 		for box in BRIDGES:
-			if box.grow(-radius).has_point(p):
+			if box.grow_individual(-radius, radius, -radius, radius).has_point(p):
 				bridge = true
 		if not bridge:
 			return true

@@ -32,7 +32,8 @@ browser runner uses actual keyboard, mouse and multi-touch input to restore all
 pumps, recover all logs, finish evacuation, choose a report and reload saves.
 It also checks camera look, flashlight and touch-only pump repair. A separate
 migration test replaces the legacy service worker and checks corrupt saves.
-Local validation passed 43 campaign checks. The desktop browser run completed
+Local validation passed 47 campaign checks, including complete crossings of both bridges in both
+directions. The desktop browser run completed
 all three pumps, all logs, evacuation, the report and reload; the corrected
 release touch run passed ten checks, including movement/aiming without camera drift
 flashlight and a touch-only repair, with zero runtime errors or failed requests. No game

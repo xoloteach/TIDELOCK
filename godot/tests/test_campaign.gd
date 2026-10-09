@@ -23,6 +23,18 @@ func run() -> void:
 	expect(HarborData.blocked(Vector2(500, 400)), "warehouse is solid")
 	expect(HarborData.blocked(Vector2(1800, 700)), "canal cannot be crossed off bridge")
 	expect(not HarborData.blocked(Vector2(1620, 700)), "bridge is walkable")
+	# Cross the full bridge from land at both ends; a centre-point test misses sealed approaches.
+	for bridge in HarborData.BRIDGES:
+		var crossing := Campaign.new()
+		crossing.assist = true
+		crossing.position = Vector2(bridge.get_center().x, HarborData.CANAL.end.y + 45)
+		for frame in range(80):
+			crossing.update(1.0 / 60, Vector2.UP, false)
+		expect(crossing.position.y < HarborData.CANAL.position.y - 20, "bridge crosses from south bank")
+		crossing.position = Vector2(bridge.get_center().x, HarborData.CANAL.position.y - 45)
+		for frame in range(80):
+			crossing.update(1.0 / 60, Vector2.DOWN, false)
+		expect(crossing.position.y > HarborData.CANAL.end.y + 20, "bridge crosses from north bank")
 	expect(HarborData.blocked(Vector2(2030, 1170)), "gate closed initially")
 	expect(not HarborData.blocked(Vector2(2030, 1170), 15, true), "gate opens after repairs")
 	expect(not game.repair(0, HarborData.TARGETS[0]), "repair rejects missing fuse")

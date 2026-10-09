@@ -17,7 +17,7 @@ function blocked(p,w,open){const has=(r,g=0)=>p[0]>=r[0]-g&&p[0]<=r[0]+r[2]+g&&p
  if(!has(w.bounds,-19))return true;
  if(w.obstacles.some(r=>has(r,19)))return true;
  if(w.pumps.some(q=>distance(p,q)<49))return true;
- if(has(w.canal,19)&&!w.bridges.some(r=>has(r,-19)))return true;
+ if(has(w.canal,19)&&!w.bridges.some(r=>has([r[0]+19,r[1]-19,r[2]-38,r[3]+38])))return true;
  return !open&&has([2020,1090,28,270],19);
 }
 function clear(a,b,w,open){const n=Math.ceil(distance(a,b)/8);for(let i=0;i<=n;i++)if(blocked([a[0]+(b[0]-a[0])*i/Math.max(n,1),a[1]+(b[1]-a[1])*i/Math.max(n,1)],w,open))return false;return true;}
@@ -54,7 +54,7 @@ async function repair(page,index){await page.keyboard.press('e');await mode(page
  await walk(page,[s.world.pumps[0][0],s.world.pumps[0][1]+65]);await repair(page,0);check((await state(page)).fuses===0,'repair consumes inventory');await page.screenshot({path:output+'/pump-restored.png'});
  // Reload the actual browser storage, then continue the checkpoint.
  await page.reload();await mode(page,'title');check(!(await state(page)).sound&&(await state(page)).motion,'field settings persist across reload');await tap(page,240,478);await mode(page,'playing');check((await state(page)).pumps[0],'checkpoint persists across immediate reload');
- for(let i=0;i<3;i++){s=await state(page);await walk(page,s.world.logs[i]);await page.keyboard.press('e');await mode(page,'log');await page.screenshot({path:output+`/log-${i+1}.png`});await tap(page,640,634);await mode(page,'playing');if(i>0){s=await state(page);await walk(page,s.world.fuses[i]);await page.keyboard.press('e');await page.waitForTimeout(200);await walk(page,[s.world.pumps[i][0],s.world.pumps[i][1]+65]);await repair(page,i);}}
+ for(let i=0;i<3;i++){s=await state(page);await walk(page,s.world.logs[i]);await page.keyboard.press('e');await mode(page,'log');await page.screenshot({path:output+`/log-${i+1}.png`});await tap(page,640,634);await mode(page,'playing');if(i>0){s=await state(page);await walk(page,s.world.fuses[i]);await page.keyboard.press('e');await page.waitForTimeout(200);await walk(page,[s.world.pumps[i][0],s.world.pumps[i][1]+65]);await repair(page,i);if(i===1){await walk(page,[1635,585]);await walk(page,[1635,815]);check((await state(page)).position[1]>785,'first-person bridge crosses from the north quay');await page.screenshot({path:output+'/bridge.png'});}}}
  s=await state(page);check(s.pumps.every(Boolean)&&s.logs.every(Boolean),'all pumps and authored shift logs reachable');await walk(page,s.world.exit);await page.keyboard.press('e');await mode(page,'ending');await tap(page,640,466);check((await state(page)).ending==='broadcast','report choice produces an ending');await page.screenshot({path:output+'/ending.png'});
  await page.reload();await mode(page,'title');await tap(page,240,478);await mode(page,'ending');check((await state(page)).ending==='broadcast','completed ending persists across reload');await context.close();
  }
