@@ -36,5 +36,5 @@ enc "$cache/oga/x/sfx100v2_lock_open_01.ogg" gate_release.ogg -16
 enc "$cache/oga/x/sfx100v2_metal_hit_01.ogg" metal_hit.ogg -16
 for i in 1 2 3; do enc "$cache/oga/x/sfx100v2_footstep_wet_0$i.ogg" step_wet_$i.ogg -24; done
 # The metal steps recording holds several footfalls; cut three of them out.
-for i in 0 1 2; do enc "$cache/oga/metal_steps.ogg" step_metal_$((i+1)).ogg -24 "silenceremove=start_periods=1:start_threshold=-40dB,atrim=$((i)):$((i)).55"; done
+for i in 0 1 2; do enc "$cache/oga/metal_steps.ogg" step_metal_$((i+1)).ogg -24 "silenceremove=start_periods=1:start_threshold=-40dB,atrim=$((i)):$((i)).55,asetpts=PTS-STARTPTS"; done
 ls -la "$out"

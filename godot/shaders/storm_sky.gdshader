@@ -17,7 +17,7 @@ void sky(){
  vec3 storm=photo*vec3(0.50,0.56,0.60)*mix(0.82,1.08,scud);
  COLOR=mix(horizon,storm,smoothstep(0.0,0.14,height));
  // Below the horizon the sea fog takes over.
- COLOR=mix(COLOR,vec3(0.22,0.29,0.31),smoothstep(0.0,-0.08,EYEDIR.y));
+ COLOR=mix(COLOR,vec3(0.22,0.29,0.31),1.0-smoothstep(-0.08,0.0,EYEDIR.y));
  COLOR+=vec3(0.12,0.08,0.04)*pow(max(dot(normalize(vec3(-0.7,0.14,-0.4)),EYEDIR),0.0),14.0);
  // Lightning lights the cloud base from within.
  COLOR+=flash*vec3(0.78,0.84,1.0)*(0.35+photo*0.9);

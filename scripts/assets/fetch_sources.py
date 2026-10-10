@@ -5,7 +5,7 @@ Poly Haven files are verified against the MD5 published by its API. The two
 Quaternius packs are fetched through itch.io's free-download endpoint and
 verified against pinned SHA-256 hashes. Nothing here runs downloaded code.
 """
-import hashlib, http.cookiejar, json, re, sys, urllib.parse, urllib.request
+import hashlib, http.cookiejar, json, re, sys, urllib.parse, urllib.request, zipfile
 from pathlib import Path
 
 CACHE = Path(sys.argv[1] if len(sys.argv) > 1 else ".asset-cache")
@@ -18,8 +18,8 @@ POLYHAVEN_MODELS = [
 ]
 POLYHAVEN_HDRI = "abandoned_slipway"
 QUATERNIUS = {
-    "universal-base-characters": (15861669, "fdbf1804c90dfc1ea03e992bff7da2dfd1a79318e13270a660180f9308455f40"),
-    "universal-animation-library": (17958403, "cc73fc4e495b82958207316596317a3f40b9fa38065bde1027937452da537724"),
+    "universal-base-characters": (15861669, "fdbf1804c90dfc1ea03e992bff7da2dfd1a79318e13270a660180f9308455f40", "ubc"),
+    "universal-animation-library": (17958403, "cc73fc4e495b82958207316596317a3f40b9fa38065bde1027937452da537724", "ual"),
 }
 HEADERS = {"User-Agent": "TIDELOCK-asset-fetch/1.0"}
 opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
@@ -50,10 +50,15 @@ def polyhaven_hdri(name):
     item = files["tonemapped"]
     save(CACHE / "polyhaven" / f"{name}.jpg", item["url"], lambda data: hashlib.md5(data).hexdigest() == item["md5"])
 
-def quaternius(game, upload, sha256):
+def quaternius(game, upload, sha256, folder):
     target = CACHE / "quaternius" / f"{game}.zip"
-    if target.exists() and hashlib.sha256(target.read_bytes()).hexdigest() == sha256:
-        return
+    if not target.exists() or hashlib.sha256(target.read_bytes()).hexdigest() != sha256:
+        download_quaternius(game, upload, sha256, target)
+    # The Blender scripts read the unpacked packs.
+    with zipfile.ZipFile(target) as archive:
+        archive.extractall(CACHE / "quaternius" / folder)
+
+def download_quaternius(game, upload, sha256, target):
     page = get(f"https://quaternius.itch.io/{game}").decode()
     token = re.search(r'name="csrf_token" value="([^"]+)"', page).group(1)
     form = urllib.parse.urlencode({"csrf_token": token}).encode()
@@ -64,6 +69,6 @@ for model in POLYHAVEN_MODELS:
     polyhaven_model(model)
     print("polyhaven", model)
 polyhaven_hdri(POLYHAVEN_HDRI)
-for game, (upload, digest) in QUATERNIUS.items():
-    quaternius(game, upload, digest)
+for game, (upload, digest, folder) in QUATERNIUS.items():
+    quaternius(game, upload, digest, folder)
     print("quaternius", game)
