@@ -1,8 +1,8 @@
 # TIDELOCK — first-person Godot mission
 
-The active game is `godot/`, using Godot 4.7.2 and its Compatibility renderer.
-The earlier TypeScript prototype is retained; its assessment is in
-`LEGACY_IMPLEMENTATION_STATUS.md`.
+The game is `godot/`, using Godot 4.7.2 and its Compatibility renderer.
+The earlier TypeScript prototype and its assessment remain in git history up to
+commit `6fda439`.
 
 ## Playable scope
 

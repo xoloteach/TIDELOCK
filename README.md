@@ -5,9 +5,9 @@ quay, recover ceramic fuses, restore three pumps, avoid maintenance machines,
 and reach evacuation before the next tide. Read the shift logs and decide where
 the recovery record goes at the ending.
 
-The Godot project is in [`godot/`](godot/). The earlier Three.js engine,
-TypeScript tests, and authored campaign material remain in the repository for
-reference. The active GitHub Pages pipeline builds and playtests the Godot game.
+The Godot project is in [`godot/`](godot/). The GitHub Pages pipeline builds
+and playtests it. The earlier Three.js prototype was removed; it remains in git
+history up to commit `6fda439`.
 
 This release is one complete harbor mission, designed for roughly 5–10 minutes
 of play, with imported CC0 assets, a stormy industrial quay, flashlight, rain,
