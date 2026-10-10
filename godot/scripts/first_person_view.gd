@@ -395,7 +395,8 @@ func _process(delta: float) -> void:
 		var bob := sin(elapsed*10)*0.035 if moving and not reduced_motion else 0.0
 		eyes.position=world(campaign.position,1.65+jump_height+bob)
 		eyes.rotation=Vector3(pitch,yaw,0)
-		tool.visible=true
+		# Lower the hammer while talking so it never covers the speaker.
+		tool.visible=focus_npc < 0
 		tool.position.y=-0.35+bob
 		if moving:
 			foot_clock+=delta
@@ -442,7 +443,7 @@ func prop_local(file: String, parent: Node3D, at: Vector3, yaw_degrees: float) -
 	var b := bounds_of(instance)
 	instance.position = Vector3(-b.get_center().x, -b.position.y, -b.get_center().z)
 	for mesh in instance.find_children("*", "MeshInstance3D", true, false):
-		mesh.visibility_range_end = 24.0 if low_quality else 60.0
+		mesh.visibility_range_end = 18.0 if low_quality else 60.0
 		if low_quality:
 			simplify(mesh)
 	holder.position = at
@@ -499,8 +500,10 @@ func quay_details() -> void:
 func people() -> void:
 	for i in range(HarborData.NPC_IDS.size()):
 		npcs.append(person(HarborData.NPC_IDS[i], HarborData.NPC_POSITIONS[i], HarborData.NPC_YAW[i], HarborData.NPC_CLIPS[i]))
-	for entry in HarborData.EVACUEES:
-		person(entry[0], entry[1], entry[2], entry[3])
+	# Skinning runs on the CPU under software WebGL; the evacuees are scenery only.
+	if not low_quality:
+		for entry in HarborData.EVACUEES:
+			person(entry[0], entry[1], entry[2], entry[3])
 	# Dax works by torchlight: a real beam from his right hand.
 	var skeleton: Skeleton3D = npcs[1].root.find_children("*", "Skeleton3D", true, false)[0]
 	var grip := BoneAttachment3D.new()
@@ -536,7 +539,7 @@ func person(file: String, at: Vector2, yaw_degrees: float, clip: String) -> Dict
 	var body: Node3D = scene.instantiate()
 	root.add_child(body)
 	for mesh in body.find_children("*", "MeshInstance3D", true, false):
-		mesh.visibility_range_end = 26.0 if low_quality else 55.0
+		mesh.visibility_range_end = 14.0 if low_quality else 55.0
 		if low_quality:
 			simplify(mesh)
 		for surface in range(mesh.mesh.get_surface_count()):

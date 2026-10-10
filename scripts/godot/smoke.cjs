@@ -21,12 +21,15 @@ function blocked(p,w,open){const has=(r,g=0)=>p[0]>=r[0]-g&&p[0]<=r[0]+r[2]+g&&p
  return !open&&has([2020,1090,28,270],19);
 }
 function clear(a,b,w,open){const n=Math.ceil(distance(a,b)/8);for(let i=0;i<=n;i++)if(blocked([a[0]+(b[0]-a[0])*i/Math.max(n,1),a[1]+(b[1]-a[1])*i/Math.max(n,1)],w,open))return false;return true;}
-function pathfind(start,target,w,open){const grid=30;const key=p=>p.join(',');const root=[Math.round(start[0]/grid),Math.round(start[1]/grid)];const queue=[root];const prev=new Map([[key(root),null]]);let end;
+function pathfind(start,target,w,open){const grid=30;const key=p=>p.join(',');let root=[Math.round(start[0]/grid),Math.round(start[1]/grid)];
+ // The planner pads obstacles more than the game does, so Mara can stand inside the
+ // padding (beside a pump); start from the nearest clear cell instead.
+ if(blocked(root.map(v=>v*grid),w,open)){let best;for(let dx=-3;dx<=3;dx++)for(let dy=-3;dy<=3;dy++){const c=[root[0]+dx,root[1]+dy];if(!blocked(c.map(v=>v*grid),w,open)&&(!best||Math.hypot(dx,dy)<best[0]))best=[Math.hypot(dx,dy),c];}if(best)root=best[1];}const queue=[root];const prev=new Map([[key(root),null]]);let end;
  for(let cursor=0;cursor<queue.length;cursor++){const cell=queue[cursor],point=cell.map(v=>v*grid);
   if(distance(point,target)<42&&clear(point,target,w,open)){end=cell;break;}
   for(const d of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]){const n=[cell[0]+d[0],cell[1]+d[1]],k=key(n);if(prev.has(k))continue;const np=n.map(v=>v*grid);if(clear(point,np,w,open)){prev.set(k,cell);queue.push(n);}}
  }
- assert.ok(end,'target has a navigable route');const points=[];for(let p=end;p;p=prev.get(key(p)))points.unshift(p.map(v=>v*grid));points.push(target);
+ assert.ok(end,`target ${target} has a navigable route from ${start}`);const points=[];for(let p=end;p;p=prev.get(key(p)))points.unshift(p.map(v=>v*grid));points.push(target);
  // Collapse straight sections; keep every turn and verify shortcut visibility.
  const result=[];let at=start;for(let i=0;i<points.length;){let far=i;while(far+1<points.length&&(()=>{const dx=Math.abs(points[far+1][0]-at[0]),dy=Math.abs(points[far+1][1]-at[1]);return dx<1||dy<1||Math.abs(dx-dy)<1;})()&&clear(at,points[far+1],w,open))far++;result.push(points[far]);at=points[far];i=far+1;}return result;
 }
@@ -61,6 +64,9 @@ async function walk(page,target){
   const s=await state(page);assert.fail(`arrived at ${target}: ${s.position}; rescues=${s.rescues}`);
  }finally{clearInterval(pulse);for(const k of ['w','a','s','d'])await page.keyboard.up(k);}
 }
+// A patrol can still catch Mara between arriving and pressing USE; a rescue moves
+// her to the checkpoint, so walk back and use the target again.
+async function reach(page,target,expected){for(let attempt=0;attempt<3;attempt++){await walk(page,target);const before=(await state(page)).rescues;await page.keyboard.press('e');try{await page.waitForFunction(m=>window.tidelockState?.mode===m,expected,{timeout:8000});return;}catch(error){if((await state(page)).rescues===before)break;console.log('Rescued before use; walking back',target);}}await mode(page,expected);}
 async function repair(page,index){await page.keyboard.press('e');await mode(page,'puzzle');const before=await state(page);await page.keyboard.press('e');await page.waitForTimeout(200);check((await state(page)).mode==='puzzle','incorrect circuit cannot energize pump');const targets=[[0,1,3],[2,0,1],[1,3,2]][index];
  for(let i=0;i<3;i++){const turns=(targets[i]-before.dials[i]+4)%4;for(let j=0;j<turns;j++){await page.keyboard.press(String(i+1));await page.waitForTimeout(70);}}
  await page.keyboard.press('e');await mode(page,'playing');await page.waitForTimeout(200);check((await state(page)).pumps[index],`pump ${index+1} restored through rotary controls`);}
@@ -89,7 +95,7 @@ async function repair(page,index){await page.keyboard.press('e');await mode(page
  await walk(page,[s.world.pumps[0][0],s.world.pumps[0][1]+65]);await repair(page,0);check((await state(page)).fuses===0,'repair consumes inventory');await page.screenshot({path:output+'/pump-restored.png'});
  // Reload the actual browser storage, then continue the checkpoint.
  await page.reload();await mode(page,'title');check(!(await state(page)).sound&&(await state(page)).motion,'field settings persist across reload');await tap(page,240,478);await mode(page,'playing');check((await state(page)).pumps[0],'checkpoint persists across immediate reload');
- for(let i=0;i<3;i++){s=await state(page);await walk(page,s.world.logs[i]);await page.keyboard.press('e');await mode(page,'log');await page.screenshot({path:output+`/log-${i+1}.png`});await tap(page,640,634);await mode(page,'playing');if(i>0){s=await state(page);await walk(page,s.world.fuses[i]);await page.keyboard.press('e');await page.waitForTimeout(200);await walk(page,[s.world.pumps[i][0],s.world.pumps[i][1]+65]);await repair(page,i);if(i===1){await walk(page,[1635,585]);await walk(page,[1635,815]);check((await state(page)).position[1]>785,'first-person bridge crosses from the north quay');await page.screenshot({path:output+'/bridge.png'});}}}
+ for(let i=0;i<3;i++){s=await state(page);await reach(page,s.world.logs[i],'log');await page.screenshot({path:output+`/log-${i+1}.png`});await tap(page,640,634);await mode(page,'playing');if(i>0){s=await state(page);await walk(page,s.world.fuses[i]);await page.keyboard.press('e');await page.waitForTimeout(200);await walk(page,[s.world.pumps[i][0],s.world.pumps[i][1]+65]);await repair(page,i);if(i===1){await walk(page,[1635,585]);await walk(page,[1635,815]);check((await state(page)).position[1]>785,'first-person bridge crosses from the north quay');await page.screenshot({path:output+'/bridge.png'});}}}
  s=await state(page);check(s.pumps.every(Boolean)&&s.logs.every(Boolean),'all pumps and authored shift logs reachable');await walk(page,s.world.exit);await page.keyboard.press('e');await mode(page,'ending');await tap(page,640,466);check((await state(page)).ending==='broadcast','report choice produces an ending');await page.screenshot({path:output+'/ending.png'});
  await page.reload();await mode(page,'title');await tap(page,240,478);await mode(page,'ending');check((await state(page)).ending==='broadcast','completed ending persists across reload');await context.close();
  }
@@ -101,7 +107,8 @@ async function repair(page,index){await page.keyboard.press('e');await mode(page
  const beforeLook=await state(phone);await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...pt(124,560),id:1},{...pt(800,350),id:2}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{...pt(124,560),id:1},{...pt(840,370),id:2}]});await phone.waitForTimeout(300);check(Math.abs((await state(phone)).yaw-beforeLook.yaw)>0.05,'multi-touch movement and first-person aiming work');await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{...pt(124,586),id:1},{...pt(800,350),id:2}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await phone.waitForTimeout(200);check(Math.abs((await state(phone)).yaw-beforeLook.yaw)<0.03,'touch look returns without drift');
  // Touch-only pickup and first pump, with player-controlled stick durations.
  async function dragMove(dx,dy,ms){await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...pt(124+dx*60,586+dy*60),id:1}]});await phone.waitForTimeout(ms);await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await phone.waitForTimeout(220);}
- async function touchWalk(target){for(let i=0;i<20;i++){const pos=(await state(phone)).position;if(distance(pos,target)<15)return;const st=await state(phone),wx=target[0]-pos[0],wy=target[1]-pos[1],dx=wx*Math.cos(st.yaw)-wy*Math.sin(st.yaw),dy=wx*Math.sin(st.yaw)+wy*Math.cos(st.yaw),len=Math.hypot(dx,dy);await dragMove(dx/len,dy/len,Math.max(60,Math.min(550,len/175*1000-60)));}assert.fail('touch navigation did not reach target');}
+ // Halve corrections after three steps: at low frame rates a late stick release overshoots.
+ async function touchWalk(target){for(let i=0;i<20;i++){const pos=(await state(phone)).position;if(distance(pos,target)<15)return;const st=await state(phone),wx=target[0]-pos[0],wy=target[1]-pos[1],dx=wx*Math.cos(st.yaw)-wy*Math.sin(st.yaw),dy=wx*Math.sin(st.yaw)+wy*Math.cos(st.yaw),len=Math.hypot(dx,dy);await dragMove(dx/len,dy/len,Math.max(40,Math.min(550,len/175*1000-60)*(i<3?1:0.5)));}assert.fail('touch navigation did not reach target');}
  s=await state(phone);await touchWalk(s.world.fuses[0]);await phone.touchscreen.tap(pt(1100,580).x,pt(1100,580).y);await phone.waitForTimeout(250);check((await state(phone)).fuses===1,'touch USE collects a fuse');await touchWalk([s.world.pumps[0][0],s.world.pumps[0][1]+65]);await phone.touchscreen.tap(pt(1100,580).x,pt(1100,580).y);await mode(phone,'puzzle');await phone.screenshot({path:output+'/mobile-puzzle.png'});
  for(const [x,n] of [[420,3],[640,3],[860,3]])for(let i=0;i<n;i++){await phone.touchscreen.tap(pt(x,453).x,pt(x,453).y);await phone.waitForTimeout(100);}
  await phone.touchscreen.tap(pt(640,587).x,pt(640,587).y);await mode(phone,'playing');check((await state(phone)).pumps[0],'touch-only circuit repair works');
