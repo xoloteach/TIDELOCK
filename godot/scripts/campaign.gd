@@ -5,6 +5,7 @@ signal message(text: String)
 signal repaired(index: int)
 signal damaged
 signal completed
+signal radio(key: String)
 
 const SAVE_PATH := "user://tidelock-harbor-v1.json"
 var position := HarborData.START
@@ -30,6 +31,8 @@ var alarm := 0.0
 var assist := false
 var save_error := ""
 var save_path := SAVE_PATH
+var talked := [false, false, false]
+var flags: Array[String] = []
 
 func _init() -> void:
 	reset_drones()
@@ -83,6 +86,9 @@ func update(delta: float, movement: Vector2, sprint: bool) -> void:
 		detected = detected and HarborData.clear_sight(drone.position, position)
 		drone.alert = move_toward(drone.alert, 1.0 if detected else 0.0, delta * (1.3 if detected else 1.8))
 		seen = seen or detected
+		if detected and not "spotted" in flags:
+			flags.append("spotted")
+			radio.emit("spotted")
 		if drone.alert >= 1.0 and invulnerable <= 0 and not assist:
 			health -= 25.0
 			invulnerable = 2.4
@@ -116,6 +122,16 @@ func nearest() -> Dictionary:
 			consider(best, "log", i, HarborData.LOGS[i])
 	if pumps.count(true) == 3:
 		consider(best, "exit", 0, HarborData.EXIT)
+	for i in range(HarborData.NPC_IDS.size()):
+		# Sera waits beyond the east gate; she is only reachable once it opens.
+		if HarborData.NPC_IDS[i] == "sera" and pumps.count(true) < 3:
+			continue
+		# People only win the prompt when they are clearly the closest thing.
+		var distance := position.distance_to(HarborData.NPC_POSITIONS[i])
+		if distance < 100.0 and (best.kind.is_empty() or distance < best.distance - 10.0):
+			best.kind = "npc"
+			best.index = i
+			best.distance = distance
 	return best
 
 func consider(best: Dictionary, kind: String, index: int, point: Vector2) -> void:
@@ -145,9 +161,18 @@ func repair(index: int, dials: Array) -> bool:
 	save_game()
 	if pumps.count(true) == 3:
 		message.emit("SERA / All three pumps drawing. East gate released. Get to the evacuation beacon.")
+		radio.emit("gate")
 	else:
+		if pumps.count(true) == 1:
+			radio.emit("first_pump")
 		message.emit("SERA / P-0%d is drawing. Checkpoint saved. The tide is slowing." % (index + 1))
 	return true
+
+func talk(index: int, choice_flag: String = "") -> void:
+	talked[index] = true
+	if not choice_flag.is_empty() and not choice_flag in flags:
+		flags.append(choice_flag)
+	save_game()
 
 func rescue(text: String) -> void:
 	position = checkpoint
@@ -175,7 +200,7 @@ static func has_checkpoint() -> bool:
 	return FileAccess.file_exists(SAVE_PATH)
 
 func save_game() -> bool:
-	var payload := JSON.stringify({"version": 1, "yaw": look_yaw, "pitch": look_pitch, "position": [position.x, position.y], "checkpoint": [checkpoint.x, checkpoint.y], "health": health, "time": time_left, "pumps": pumps, "collected": collected, "logs": logs, "fuses": fuse_count, "rescues": rescues, "won": won, "assist": assist, "record": record_choice})
+	var payload := JSON.stringify({"version": 1, "yaw": look_yaw, "pitch": look_pitch, "position": [position.x, position.y], "checkpoint": [checkpoint.x, checkpoint.y], "health": health, "time": time_left, "pumps": pumps, "collected": collected, "logs": logs, "fuses": fuse_count, "rescues": rescues, "won": won, "assist": assist, "record": record_choice, "talked": talked, "flags": flags})
 	var browser_saved := true
 	if OS.has_feature("web"):
 		browser_saved = bool(JavaScriptBridge.eval("try { localStorage.setItem('tidelock-harbor-v1', " + JSON.stringify(payload) + "); true; } catch (e) { console.warn('TIDELOCK checkpoint storage unavailable: ' + e.message); false; }", true))
@@ -226,6 +251,10 @@ func load_game() -> bool:
 	won = bool(data.won)
 	record_choice = str(data.get("record", ""))
 	assist = bool(data.assist)
+	talked = data.get("talked", [false, false, false]).duplicate()
+	flags.clear()
+	for flag in data.get("flags", []):
+		flags.append(str(flag))
 	if HarborData.blocked(position, 15, pumps.count(true) == 3):
 		position = checkpoint
 	if HarborData.blocked(position, 15, pumps.count(true) == 3):
@@ -260,5 +289,18 @@ static func valid_save(data: Variant) -> bool:
 		return false
 	if data.get("record", "") not in ["", "broadcast", "archive"]:
 		return false
+	# Story fields arrived after the first release; older saves omit them.
+	if data.has("talked"):
+		if not data.talked is Array or data.talked.size() != 3:
+			return false
+		for value in data.talked:
+			if not value is bool:
+				return false
+	if data.has("flags"):
+		if not data.flags is Array or data.flags.size() > 32:
+			return false
+		for value in data.flags:
+			if not value is String or value.length() > 32:
+				return false
 	var balance: int = data.collected.count(true) - data.pumps.count(true)
 	return int(data.fuses) == balance and balance >= 0 and balance <= 3 and (not data.won or data.pumps.count(true) == 3)

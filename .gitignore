@@ -1,41 +1,21 @@
 node_modules/
 dist/
-dist-ssr/
-*.local
 .DS_Store
 
 # Test / tooling output
 test-results/
-playwright-report/
-blob-report/
-playwright/.cache/
-coverage/
-tests/visual/**/*-actual.png
-tests/visual/**/*-diff.png
-
-# Generated artefacts (reproducible via scripts)
-.tts-cache/
-benchmark-results/
-*.tsbuildinfo
-
-# Generated voice-over. Reproducible with `pnpm generate:vo`, and deliberately
-# not committed: edge-tts output comes from Microsoft's online speech service,
-# which grants no redistribution licence (spec 20.5). ASSET_LICENSES.md rule 1
-# says a non-redistributable asset ships as the script that makes it, not as the
-# asset. The manifest at content/dialogue/vo-manifest.json *is* committed — it is
-# our own data, and it is what makes regeneration incremental.
-public/assets/audio/dialogue/
 
 # Editor
 .vscode/*
-!.vscode/extensions.json
 .idea/
 
 # Env
 .env
-.env.local
-.env.*.local
+.env.*
 
 # Godot import/editor cache (sources and .uid files stay tracked)
 godot/.godot/
 .godot-tools/
+
+# Downloaded CC0 sources for scripts/assets (rebuilt on demand)
+.asset-cache

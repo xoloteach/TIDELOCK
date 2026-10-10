@@ -29,7 +29,28 @@ var green_material: StandardMaterial3D
 var jump_height := 0.0
 var jump_speed := 0.0
 var foot_clock := 0.0
+var sound_enabled := true
+var sky_material: ShaderMaterial
+var sun: DirectionalLight3D
+var environment: Environment
+var flash := 0.0
+var sky_flash := 0.0
+var next_strike := 7.0
+var thunder_delay := -1.0
+var thunder_strength := 0.0
+var npcs: Array[Dictionary] = []
+var focus_npc := -1
+var outflows: Array[CPUParticles3D] = []
+var pump_sounds: Array[AudioStreamPlayer3D] = []
+var patrol_alarms: Array[AudioStreamPlayer3D] = []
+var patrol_alert: Array[float] = [0.0, 0.0, 0.0, 0.0]
+var sounds3d: Array[AudioStreamPlayer3D] = []
+var waves: Array[Dictionary] = []
+var splashes: CPUParticles3D
+# Software WebGL (and ?quality=low) draws less: shorter view ranges, no cosmetic particles.
+var low_quality := false
 signal footstep
+signal thunder(strength: float)
 
 func world(p: Vector2, height: float = 0.0) -> Vector3:
 	return Vector3(p.x / SCALE, height, p.y / SCALE)
@@ -112,13 +133,18 @@ func _ready() -> void:
 	if OS.has_feature("web"):
 		software = software or bool(JavaScriptBridge.eval("new URLSearchParams(location.search).get('quality') === 'low'"))
 	get_viewport().scaling_3d_scale = 0.5 if software else 0.85
+	low_quality = software
 	var env := WorldEnvironment.new()
 	var settings := Environment.new()
 	settings.background_mode = Environment.BG_SKY
 	var sky := Sky.new()
 	var sky_mat := ShaderMaterial.new()
 	sky_mat.shader = preload("res://shaders/storm_sky.gdshader")
+	sky_mat.set_shader_parameter("clouds", preload("res://assets/sky/storm_clouds.jpg"))
 	sky.sky_material = sky_mat
+	sky.radiance_size = Sky.RADIANCE_SIZE_64
+	sky.process_mode = Sky.PROCESS_MODE_INCREMENTAL
+	sky_material = sky_mat
 	settings.sky = sky
 	settings.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	settings.ambient_light_color = Color("9ab9c5")
@@ -128,8 +154,9 @@ func _ready() -> void:
 	settings.fog_light_color = Color("58676d")
 	settings.fog_density = 0.010
 	env.environment = settings
+	environment = settings
 	add_child(env)
-	var sun := DirectionalLight3D.new()
+	sun = DirectionalLight3D.new()
 	sun.light_color = Color("ded9c6")
 	sun.light_energy = 0.95
 	sun.rotation_degrees = Vector3(-42, -32, 0)
@@ -219,15 +246,23 @@ func _ready() -> void:
 			pump.add_child(rotor)
 		label(pump,HarborData.PUMP_NAMES[i],Vector3(0,2.3,0),Color("f2c36c"),34)
 		pumps.append(pump)
-		var supply := model("survival/box",Vector3(0.6,0.5,0.5),world(HarborData.FUSES[i]))
-		box(supply,Vector3(0.52,0.04,0.36),Vector3(0,0.52,0),material(Color("ffc46e"),1.5))
-		label(supply,"FUSE",Vector3(0,1.3,0),Color("ffc46e"),30)
+		# Contractor crate (Poly Haven) with a lit amber fuse tag on its lid.
+		var supply := Node3D.new()
+		add_child(supply)
+		supply.position = world(HarborData.FUSES[i])
+		supply.rotation.y = [0.4, -0.7, 1.9][i]
+		var crate := prop_local("old_military_crate", supply, Vector3.ZERO, 0.0)
+		crate.scale = Vector3.ONE * 0.7
+		box(supply,Vector3(0.34,0.03,0.16),Vector3(0,0.23,0),material(Color("ffc46e"),1.5))
+		label(supply,"FUSE",Vector3(0,1.1,0),Color("ffc46e"),30)
 		supplies.append(supply)
 		var record := Node3D.new()
 		add_child(record)
 		record.position=world(HarborData.LOGS[i])
 		box(record,Vector3(0.07,1,0.07),Vector3(0,0.5,0),steel)
 		box(record,Vector3(0.38,0.25,0.06),Vector3(0,1.1,0),material(Color("b3d2c9"),0.4))
+		var sheet := prop_local("clipboard", record, Vector3(0, 1.0, 0.05), 0.0)
+		sheet.rotation.x = -1.2
 		label(record,"SHIFT LOG",Vector3(0,1.7,0),Color("c7ded6"),26)
 		records.append(record)
 	# Autonomous maintenance machines built from tank/steel parts, with search lights.
@@ -248,6 +283,11 @@ func _ready() -> void:
 		lamp.spot_angle=42
 		patrol.add_child(lamp)
 		patrols.append(patrol)
+		var hum := sound3d(preload("res://assets/audio/patrol_hum.ogg"), patrol, -14.0, 14.0, true)
+		hum.pitch_scale = 0.9 + i * 0.06
+		patrol_alarms.append(sound3d(preload("res://assets/audio/patrol_alarm.ogg"), patrol, -6.0, 26.0, false))
+		# The lamp must stay the last child: _process toggles it when stunned.
+		patrol.move_child(lamp, patrol.get_child_count() - 1)
 	gate=box(self,Vector3(0.28,2.1,5.4),world(Vector2(2034,1225),1.05),yellow)
 	label(self,"EAST EVAC / RESTORE 3 PUMPS",world(HarborData.EXIT,3),Color("7cd6c6"),36)
 	box(self,Vector3(0.6,0.12,0.6),world(HarborData.EXIT,0.06),material(Color("79debc"),2))
@@ -260,6 +300,10 @@ func _ready() -> void:
 		lamp.light_energy=1.4
 		lamp.omni_range=5
 		add_child(lamp)
+	quay_details()
+	people()
+	pump_effects()
+	weather_effects()
 	eyes=Camera3D.new()
 	eyes.fov=78
 	eyes.near=0.06
@@ -351,7 +395,8 @@ func _process(delta: float) -> void:
 		var bob := sin(elapsed*10)*0.035 if moving and not reduced_motion else 0.0
 		eyes.position=world(campaign.position,1.65+jump_height+bob)
 		eyes.rotation=Vector3(pitch,yaw,0)
-		tool.visible=true
+		# Lower the hammer while talking so it never covers the speaker.
+		tool.visible=focus_npc < 0
 		tool.position.y=-0.35+bob
 		if moving:
 			foot_clock+=delta
@@ -374,7 +419,312 @@ func _process(delta: float) -> void:
 		patrols[i].rotation.y=atan2(-h.x,-h.y)
 		patrols[i].get_child(patrols[i].get_child_count()-1).visible=drone.stun<=0
 	gate.visible=campaign.pumps.count(true)<3
+	update_world_effects(delta)
 	pulse.visible=campaign.pulse_ring>0
 	if pulse.visible:
 		pulse.position=world(campaign.position,0.05)
 		pulse.scale=Vector3.ONE*maxf(0.1,(1-campaign.pulse_ring)*5.4)
+
+# Software rendering: per-vertex light, no normal maps.
+func simplify(mesh: MeshInstance3D) -> void:
+	for surface in range(mesh.mesh.get_surface_count()):
+		var mat: Material = mesh.get_active_material(surface)
+		if mat is StandardMaterial3D:
+			mat.shading_mode = BaseMaterial3D.SHADING_MODE_PER_VERTEX
+			mat.normal_enabled = false
+
+# Poly Haven props are authored in metres; they are centred and set on the ground.
+func prop_local(file: String, parent: Node3D, at: Vector3, yaw_degrees: float) -> Node3D:
+	var holder := Node3D.new()
+	parent.add_child(holder)
+	var scene: PackedScene = load("res://assets/props/%s.glb" % file.to_lower())
+	var instance: Node3D = scene.instantiate()
+	holder.add_child(instance)
+	var b := bounds_of(instance)
+	instance.position = Vector3(-b.get_center().x, -b.position.y, -b.get_center().z)
+	for mesh in instance.find_children("*", "MeshInstance3D", true, false):
+		mesh.visibility_range_end = 18.0 if low_quality else 60.0
+		if low_quality:
+			simplify(mesh)
+	holder.position = at
+	holder.rotation.y = deg_to_rad(yaw_degrees)
+	return holder
+
+func sound3d(stream: AudioStream, parent: Node3D, volume: float, reach: float, looping: bool) -> AudioStreamPlayer3D:
+	var node := AudioStreamPlayer3D.new()
+	var copy := stream.duplicate()
+	if copy is AudioStreamOggVorbis:
+		copy.loop = looping
+	node.stream = copy
+	node.volume_db = volume
+	node.max_distance = reach
+	node.unit_size = 3.0
+	node.attenuation_model = AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE
+	parent.add_child(node)
+	sounds3d.append(node)
+	if looping and DisplayServer.get_name() != "headless":
+		node.play(randf() * 0.5)
+	return node
+
+func quay_details() -> void:
+	for item in HarborData.PROPS:
+		prop_local(item[0], self, world(item[1], item[3]), item[2])
+	# Tyre fenders hang off the seaward face of the quay walls.
+	for x in range(260, 2100, 460 if low_quality else 230):
+		for edge in [[158.0, 0.0], [1382.0, 180.0]]:
+			var tyre := prop_local("old_tyre", self, world(Vector2(x, edge[0]), -0.15), edge[1])
+			tyre.rotation.x = 0.12
+	if low_quality:
+		# Extra lights cost a full pass per lit object in the compatibility renderer.
+		return
+	# Security floodlights on the warehouse walls.
+	for item in HarborData.PROPS:
+		if item[0] == "security_light":
+			var lamp := OmniLight3D.new()
+			var facing := Vector3(0, 0, 0.6).rotated(Vector3.UP, deg_to_rad(item[2]))
+			lamp.position = world(item[1], item[3] - 0.2) + facing
+			lamp.light_color = Color("e8f0ff")
+			lamp.light_energy = 1.6
+			lamp.omni_range = 7.0
+			add_child(lamp)
+	# Evacuation point: a working searchlight on the barrel, pointed at the gate.
+	var beam := SpotLight3D.new()
+	beam.position = world(Vector2(2138, 1108), 1.25)
+	beam.rotation = Vector3(-0.35, deg_to_rad(110), 0)
+	beam.light_color = Color("fff3d6")
+	beam.light_energy = 3.0
+	beam.spot_range = 14.0
+	beam.spot_angle = 24.0
+	add_child(beam)
+
+func people() -> void:
+	for i in range(HarborData.NPC_IDS.size()):
+		npcs.append(person(HarborData.NPC_IDS[i], HarborData.NPC_POSITIONS[i], HarborData.NPC_YAW[i], HarborData.NPC_CLIPS[i]))
+	# Skinning runs on the CPU under software WebGL; the evacuees are scenery only.
+	if not low_quality:
+		for entry in HarborData.EVACUEES:
+			person(entry[0], entry[1], entry[2], entry[3])
+	# Dax works by torchlight: a real beam from his right hand.
+	var skeleton: Skeleton3D = npcs[1].root.find_children("*", "Skeleton3D", true, false)[0]
+	var grip := BoneAttachment3D.new()
+	grip.bone_name = "hand_r"
+	skeleton.add_child(grip)
+	var torch_body := CylinderMesh.new()
+	torch_body.top_radius = 0.022
+	torch_body.bottom_radius = 0.018
+	torch_body.height = 0.2
+	var handle := MeshInstance3D.new()
+	handle.mesh = torch_body
+	handle.material_override = material(Color("26292b"))
+	handle.rotation.z = PI / 2
+	handle.position = Vector3(0.05, 0.03, 0)
+	grip.add_child(handle)
+	if low_quality:
+		return
+	var beam := SpotLight3D.new()
+	beam.light_color = Color("fff1cf")
+	beam.light_energy = 2.2
+	beam.spot_range = 9.0
+	beam.spot_angle = 22.0
+	beam.position = Vector3(0.16, 0.03, 0)
+	beam.rotation = Vector3(0, -PI / 2, 0)
+	grip.add_child(beam)
+
+func person(file: String, at: Vector2, yaw_degrees: float, clip: String) -> Dictionary:
+	var root := Node3D.new()
+	add_child(root)
+	root.position = world(at)
+	root.rotation.y = deg_to_rad(yaw_degrees)
+	var scene: PackedScene = load("res://assets/characters/%s.glb" % file)
+	var body: Node3D = scene.instantiate()
+	root.add_child(body)
+	for mesh in body.find_children("*", "MeshInstance3D", true, false):
+		mesh.visibility_range_end = 14.0 if low_quality else 55.0
+		if low_quality:
+			simplify(mesh)
+		for surface in range(mesh.mesh.get_surface_count()):
+			var mat: Material = mesh.get_active_material(surface)
+			# Clothing carries baked occlusion in its vertex colours.
+			if mat is StandardMaterial3D and mat.resource_name.begins_with("Cloth"):
+				mat.vertex_color_use_as_albedo = true
+	var anim: AnimationPlayer = body.find_children("*", "AnimationPlayer", true, false)[0]
+	for name in anim.get_animation_list():
+		anim.get_animation(name).loop_mode = Animation.LOOP_LINEAR
+	var base := clip_name(anim, clip)
+	anim.play(base)
+	anim.seek(randf() * 2.0, true)
+	return {"root": root, "anim": anim, "base": base, "talk": 0.0, "at": at}
+
+# Godot's importer drops a "_Loop" suffix from clip names; accept either form.
+func clip_name(anim: AnimationPlayer, wanted: String) -> String:
+	if anim.has_animation(wanted):
+		return wanted
+	var short := wanted.trim_suffix("_Loop")
+	return short if anim.has_animation(short) else ""
+
+func pump_effects() -> void:
+	var water_drop := QuadMesh.new()
+	water_drop.size = Vector2(0.09, 0.09)
+	var spray := StandardMaterial3D.new()
+	spray.albedo_color = Color(0.78, 0.88, 0.92, 0.55)
+	spray.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	spray.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	spray.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
+	water_drop.material = spray
+	for i in range(3):
+		# Discharge pipe and its outflow, live once the pump is restored.
+		var pipe := box(pumps[i], Vector3(0.16, 0.16, 0.7), Vector3(-0.55, 0.45, -0.1), material(Color("3b4d52")))
+		pipe.rotation.y = PI / 2
+		var flow := CPUParticles3D.new()
+		flow.position = Vector3(-0.9, 0.45, -0.1)
+		flow.emitting = false
+		flow.amount = 24 if low_quality else 70
+		flow.lifetime = 0.7
+		flow.direction = Vector3(-1, 0.15, 0)
+		flow.spread = 9
+		flow.initial_velocity_min = 2.2
+		flow.initial_velocity_max = 2.8
+		flow.gravity = Vector3(0, -9.8, 0)
+		flow.scale_amount_min = 0.6
+		flow.scale_amount_max = 1.4
+		flow.mesh = water_drop
+		pumps[i].add_child(flow)
+		outflows.append(flow)
+		pump_sounds.append(sound3d(preload("res://assets/audio/pump_loop.ogg"), pumps[i], -10.0, 22.0, false))
+		pump_sounds.append(sound3d(preload("res://assets/audio/outflow_loop.ogg"), pumps[i], -12.0, 14.0, false))
+
+func weather_effects() -> void:
+	# Waves break against the seawall; each source fires its own spray.
+	var mist := QuadMesh.new()
+	mist.size = Vector2(0.5, 0.5)
+	var mist_material := StandardMaterial3D.new()
+	mist_material.albedo_color = Color(0.82, 0.88, 0.9, 0.35)
+	mist_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mist_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mist_material.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
+	mist.material = mist_material
+	var clips := [preload("res://assets/audio/wave_a.ogg"), preload("res://assets/audio/wave_b.ogg")]
+	for spot in [Vector2(420, 130), Vector2(1180, 130), Vector2(1900, 130), Vector2(800, 1410), Vector2(1600, 1410)]:
+		var anchor := Node3D.new()
+		anchor.position = world(spot, 0.2)
+		add_child(anchor)
+		var burst := CPUParticles3D.new()
+		burst.emitting = false
+		burst.one_shot = true
+		burst.amount = 26
+		burst.lifetime = 1.6
+		burst.explosiveness = 0.85
+		burst.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
+		burst.emission_box_extents = Vector3(2.5, 0.1, 0.3)
+		burst.direction = Vector3(0, 1, 0.3 if spot.y > 700 else -0.3)
+		burst.spread = 25
+		burst.initial_velocity_min = 2.5
+		burst.initial_velocity_max = 4.5
+		burst.gravity = Vector3(0, -5, 0)
+		burst.scale_amount_min = 0.6
+		burst.scale_amount_max = 1.8
+		burst.mesh = mist
+		anchor.add_child(burst)
+		var voice := sound3d(clips[waves.size() % 2], anchor, -8.0, 30.0, false)
+		waves.append({"burst": burst, "voice": voice, "timer": randf_range(1.0, 7.0)})
+	# Raindrops kick up from the paving around the player.
+	splashes = CPUParticles3D.new()
+	splashes.amount = 40
+	splashes.lifetime = 0.25
+	splashes.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
+	splashes.emission_box_extents = Vector3(5, 0.01, 5)
+	splashes.direction = Vector3(0, 1, 0)
+	splashes.spread = 35
+	splashes.initial_velocity_min = 0.6
+	splashes.initial_velocity_max = 1.2
+	splashes.gravity = Vector3(0, -9.8, 0)
+	var droplet := QuadMesh.new()
+	droplet.size = Vector2(0.035, 0.035)
+	var droplet_material := mist_material.duplicate()
+	droplet_material.albedo_color = Color(0.8, 0.88, 0.9, 0.6)
+	droplet.material = droplet_material
+	splashes.mesh = droplet
+	add_child(splashes)
+
+# During a conversation the camera settles on the speaker.
+func focus(index: int) -> void:
+	focus_npc = index
+
+func speak(index: int, seconds: float) -> void:
+	if index < 0 or index >= npcs.size():
+		return
+	var npc: Dictionary = npcs[index]
+	npc.talk = seconds
+	var talking := clip_name(npc.anim, "Idle_Talking_Loop")
+	if npc.base != "Fixing_Kneeling" and not talking.is_empty():
+		npc.anim.play(talking, 0.35)
+
+func alarm_cue() -> void:
+	damage_flash = maxf(damage_flash, 0.7)
+
+func update_world_effects(delta: float) -> void:
+	for node in sounds3d:
+		node.stream_paused = not sound_enabled
+	# Lightning: a flicker in the cloud base, then thunder after a distance delay.
+	next_strike -= delta
+	if next_strike <= 0.0 and not menu:
+		next_strike = randf_range(10.0, 24.0)
+		thunder_strength = randf_range(0.35, 1.0)
+		thunder_delay = lerpf(2.6, 0.5, thunder_strength)
+		if not reduced_motion:
+			flash = thunder_strength
+	if thunder_delay >= 0.0:
+		thunder_delay -= delta
+		if thunder_delay < 0.0:
+			thunder.emit(thunder_strength)
+	flash = maxf(0.0, flash - delta * 2.6)
+	var flicker := flash * (0.6 + 0.4 * sin(elapsed * 60.0))
+	# Touch the sky only while lightning is visible; any change re-renders it.
+	if flicker > 0.0 or sky_flash > 0.0:
+		sky_flash = flicker
+		sky_material.set_shader_parameter("flash", flicker)
+		sun.light_energy = 0.95 + flicker * 2.2
+		environment.ambient_light_energy = 0.60 + flicker * 0.9
+	for wave in waves:
+		wave.timer -= delta
+		if wave.timer <= 0.0:
+			wave.timer = randf_range(4.0, 9.0)
+			if not reduced_motion and not low_quality:
+				wave.burst.restart()
+			if sound_enabled and DisplayServer.get_name() != "headless":
+				wave.voice.pitch_scale = randf_range(0.85, 1.1)
+				wave.voice.play()
+	splashes.emitting = not reduced_motion and not menu and not low_quality
+	splashes.position = Vector3(eyes.position.x, 0.02, eyes.position.z)
+	for i in range(3):
+		var running: bool = campaign.pumps[i]
+		outflows[i].emitting = running and not reduced_motion
+		for node in [pump_sounds[i * 2], pump_sounds[i * 2 + 1]]:
+			if running and not node.playing and DisplayServer.get_name() != "headless":
+				node.stream.loop = true
+				node.play()
+			elif not running and node.playing:
+				node.stop()
+	for i in range(4):
+		var alert: float = campaign.drones[i].alert
+		if alert > 0.55 and patrol_alert[i] <= 0.55 and sound_enabled and DisplayServer.get_name() != "headless":
+			patrol_alarms[i].play()
+		patrol_alert[i] = alert
+	for i in range(npcs.size()):
+		var npc: Dictionary = npcs[i]
+		if npc.talk > 0.0:
+			npc.talk -= delta
+			if npc.talk <= 0.0 and npc.anim.current_animation != npc.base:
+				npc.anim.play(npc.base, 0.45)
+		# Standing speakers turn to face Mara while she talks to them.
+		if i == focus_npc and npc.base != "Fixing_Kneeling":
+			var to_player: Vector2 = campaign.position - npc.at
+			npc.root.rotation.y = lerp_angle(npc.root.rotation.y, atan2(to_player.x, to_player.y), 1.0 - exp(-delta * 3.0))
+	if focus_npc >= 0 and not menu:
+		var npc: Dictionary = npcs[focus_npc]
+		var head: Vector3 = world(npc.at, 1.05 if npc.base == "Fixing_Kneeling" else 1.6)
+		var to_head := head - eyes.position
+		var want_yaw := atan2(-to_head.x, -to_head.z)
+		var want_pitch := atan2(to_head.y, Vector2(to_head.x, to_head.z).length())
+		yaw = lerp_angle(yaw, want_yaw, 1.0 - exp(-delta * 4.0))
+		pitch = lerpf(pitch, want_pitch, 1.0 - exp(-delta * 4.0))

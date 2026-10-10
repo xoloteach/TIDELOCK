@@ -1,0 +1,3 @@
+Sky: cloud band from Poly Haven HDRI "Abandoned Slipway" (https://polyhaven.com/a/abandoned_slipway)
+License: CC0 1.0 Universal (public domain dedication)
+Cropped and graded with scripts/assets/build_sky.sh.

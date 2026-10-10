@@ -104,6 +104,47 @@ func run() -> void:
 	mover.update(1.0, Vector2.RIGHT, false)
 	expect(mover.position.x == 250, "movement cannot enter warehouse")
 	expect(not HarborData.clear_sight(Vector2(250, 400), Vector2(840, 400)), "warehouse occludes machine sight")
+	# People, props and story state.
+	for i in range(HarborData.NPC_IDS.size()):
+		expect(HarborData.blocked(HarborData.NPC_POSITIONS[i]), "%s is solid" % HarborData.NPC_IDS[i])
+		expect(Story.SCENES.has(HarborData.NPC_IDS[i]) and Story.REPEAT.has(HarborData.NPC_IDS[i]), "%s has a scene and a repeat line" % HarborData.NPC_IDS[i])
+		for entry in Story.SCENES[HarborData.NPC_IDS[i]]:
+			expect(Story.SPEAKERS.has(entry[0]) and not str(entry[1]).is_empty(), "scene line has a known speaker")
+			if entry.size() > 2:
+				for option in entry[2]:
+					expect(option.size() == 4 and Story.SPEAKERS.has(option[1]) and not str(option[3]).is_empty(), "choice has a reply and a flag")
+	var all_points := [HarborData.START, HarborData.EXIT]
+	for i in range(3):
+		all_points.append_array([HarborData.FUSES[i], HarborData.LOGS[i], HarborData.PUMPS[i] + Vector2(0, 70)])
+	for point in all_points:
+		var clear := true
+		for box in HarborData.SOLID_CACHE:
+			if box.grow(34).has_point(point):
+				clear = false
+		expect(clear, "props and people keep clear of objective %s" % point)
+	var talker := Campaign.new()
+	talker.save_path = game.save_path
+	talker.position = HarborData.NPC_POSITIONS[0] + Vector2(-60, 0)
+	expect(not HarborData.blocked(talker.position), "Ivo can be approached")
+	expect(talker.nearest().kind == "npc" and talker.nearest().index == 0, "context selects Ivo")
+	talker.position = Vector2(2000, 1290)
+	expect(talker.nearest().kind != "npc", "Sera cannot be reached through the closed gate")
+	talker.pumps = [true, true, true]
+	talker.position = Vector2(2060, 1250)
+	expect(talker.nearest().kind == "npc" and talker.nearest().index == 2, "Sera waits beyond the open gate")
+	talker.pumps = [false, false, false]
+	talker.position = HarborData.FUSES[0]
+	expect(talker.nearest().kind == "fuse", "fuse still wins at its crate")
+	talker.talk(0, "ivo_trust")
+	talker.talk(0, "ivo_trust")
+	expect(talker.talked[0] and talker.flags.count("ivo_trust") == 1, "conversation and choice recorded once")
+	var listener := Campaign.new()
+	listener.save_path = game.save_path
+	expect(listener.load_game() and listener.talked[0] and "ivo_trust" in listener.flags, "story state survives checkpoint")
+	var legacy: Dictionary = JSON.parse_string(JSON.stringify({"version": 1, "position": [430, 1190], "checkpoint": [430, 1190], "health": 100, "time": 480, "pumps": [false, false, false], "collected": [false, false, false], "logs": [false, false, false], "fuses": 0, "rescues": 0, "won": false, "assist": false}))
+	expect(Campaign.valid_save(legacy), "saves from before the story update still load")
+	legacy["flags"] = [3]
+	expect(not Campaign.valid_save(legacy), "malformed story flags rejected")
 	DirAccess.remove_absolute(game.save_path)
 	print("Campaign checks: %d passed / %d total" % [checks - failures, checks])
 	quit(1 if failures > 0 else 0)

@@ -12,6 +12,12 @@ var touch_device := false
 var look_touch_id := -1
 var look_touch_position := Vector2.ZERO
 var bridge_timer := 0.0
+# Conversation state: the active scene, its line, and a pending choice reply.
+var talk_npc := -1
+var talk_lines: Array = []
+var talk_index := 0
+var talk_reply := false
+var talk_flag := ""
 
 func _ready() -> void:
 	configure_input()
@@ -34,7 +40,9 @@ func _ready() -> void:
 	ui.command.connect(action)
 	audio = Soundscape.new()
 	add_child(audio)
-	view.footstep.connect(func(): audio.step())
+	view.footstep.connect(func(): audio.step(on_bridge()))
+	ui.radio_started.connect(func(): audio.cue("radio"))
+	view.thunder.connect(func(strength: float): audio.thunder(strength))
 	connect_campaign()
 	load_settings()
 	ui.show_mode("title")
@@ -66,6 +74,12 @@ func connect_campaign() -> void:
 		view.damage_flash = 0.7
 		audio.cue("damage")
 	)
+	campaign.radio.connect(func(key: String):
+		ui.radio({"spotted": Story.RADIO_SPOTTED, "first_pump": Story.RADIO_FIRST_PUMP, "gate": Story.RADIO_GATE}.get(key, []))
+		if key == "gate":
+			audio.cue("gate")
+	)
+	campaign.damaged.connect(func(): view.alarm_cue())
 	campaign.completed.connect(func():
 		ui.ending = ""
 		ui.show_mode("ending")
@@ -94,6 +108,7 @@ func _process(delta: float) -> void:
 		Input.mouse_mode = wanted
 	view.menu = not started or ui.mode == "title"
 	view.reduced_motion = ui.reduced_motion
+	view.sound_enabled = ui.sound_enabled
 	ui.hit_flash = view.damage_flash
 	bridge_timer += delta
 	if bridge_timer > 0.15:
@@ -167,6 +182,16 @@ func _notification(what: int) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.echo:
 		return
+	if ui.mode == "dialogue":
+		if event.is_action_pressed("pause_game"):
+			end_conversation()
+		elif event.is_action_pressed("interact") or event.is_action_pressed("jump") or event.is_action_pressed("ui_accept"):
+			action("advance")
+		else:
+			for i in range(3):
+				if event.is_action_pressed(["valve_one", "valve_two", "valve_three"][i]):
+					action("choose_%d" % i)
+		return
 	if event.is_action_pressed("flashlight") and ui.mode == "playing":
 		view.flashlight_enabled = not view.flashlight_enabled
 	elif event.is_action_pressed("jump") and ui.mode == "playing":
@@ -202,7 +227,11 @@ func action(command: String) -> void:
 		var index := int(command.trim_prefix("rotate_"))
 		ui.dials[index] = (ui.dials[index] + 1) % 4
 		ui.puzzle_error = ""
-		audio.cue("click")
+		audio.cue("valve")
+		return
+	if command.begins_with("choose_") and ui.mode == "dialogue":
+		choose(int(command.trim_prefix("choose_")))
+		publish_state()
 		return
 	match command:
 		"new":
@@ -277,6 +306,8 @@ func action(command: String) -> void:
 				view.burst(campaign.position)
 		"interact":
 			interact()
+		"advance":
+			advance_conversation()
 		"confirm":
 			if ui.mode != "puzzle":
 				return
@@ -306,6 +337,8 @@ func start_new() -> void:
 	started = true
 	campaign.save_game()
 	ui.show_mode("playing")
+	ui.clear_radio()
+	ui.radio(Story.RADIO_INTRO)
 	ui.inform("SERA / Start with the depot fuse box. Your compass points to supplies, then pumps. [E] to use; [Tab] for the map.")
 
 func interact() -> void:
@@ -332,8 +365,68 @@ func interact() -> void:
 			ui.show_mode("log")
 		"exit":
 			campaign.finish()
+		"npc":
+			start_conversation(index)
 		_:
 			ui.inform("Move closer to a fuse box, pump panel or shift log. [Tab] opens the recovery map.")
+
+func on_bridge() -> bool:
+	for bridge in HarborData.BRIDGES:
+		if bridge.has_point(campaign.position):
+			return true
+	return false
+
+func start_conversation(index: int) -> void:
+	var id: String = HarborData.NPC_IDS[index]
+	if campaign.talked[index]:
+		ui.radio([Story.REPEAT[id]])
+		view.speak(index, 3.0)
+		return
+	talk_npc = index
+	talk_lines = Story.SCENES[id]
+	talk_index = 0
+	talk_reply = false
+	talk_flag = ""
+	view.focus(index)
+	show_line()
+
+func show_line() -> void:
+	var entry: Array = talk_lines[talk_index]
+	ui.dialogue_line = [entry[0], entry[1]]
+	ui.dialogue_options = entry[2] if entry.size() > 2 else []
+	view.speak(talk_npc if entry[0] != "mara" else -1, Story.duration(entry[1]))
+	ui.show_mode("dialogue")
+
+func advance_conversation() -> void:
+	if ui.mode != "dialogue" or (not ui.dialogue_options.is_empty() and not talk_reply):
+		return
+	talk_reply = false
+	talk_index += 1
+	audio.cue("click")
+	if talk_index >= talk_lines.size():
+		end_conversation()
+	else:
+		show_line()
+
+func choose(option: int) -> void:
+	if talk_reply or option >= ui.dialogue_options.size():
+		return
+	var picked: Array = ui.dialogue_options[option]
+	talk_flag = picked[3]
+	talk_reply = true
+	ui.dialogue_line = [picked[1], picked[2]]
+	ui.dialogue_options = []
+	view.speak(talk_npc, Story.duration(picked[2]))
+	audio.cue("click")
+	ui.show_mode("dialogue")
+
+func end_conversation() -> void:
+	if talk_npc >= 0:
+		campaign.talk(talk_npc, talk_flag)
+	talk_npc = -1
+	view.focus(-1)
+	ui.show_mode("playing")
+	publish_state()
 
 func save_settings() -> void:
 	var payload := JSON.stringify({"sound": ui.sound_enabled, "motion": ui.reduced_motion, "touch": ui.touch, "assist": campaign.assist})
@@ -378,10 +471,13 @@ func load_settings() -> void:
 func publish_state() -> void:
 	if not OS.has_feature("web"):
 		return
-	var data := {"renderer": "first-person-3d", "fps": Engine.get_frames_per_second(), "adapter": RenderingServer.get_video_adapter_name(), "yaw": view.yaw, "pitch": view.pitch, "flashlight": view.flashlight_enabled, "mode": ui.mode, "has_save": ui.has_save, "position": [campaign.position.x, campaign.position.y], "health": campaign.health, "stamina": campaign.stamina, "pumps": campaign.pumps, "fuses": campaign.fuse_count, "collected": campaign.collected, "logs": campaign.logs, "won": campaign.won, "assist": campaign.assist, "touch": ui.touch, "stick": [ui.joystick.x,ui.joystick.y], "move_touch": joystick_id, "look_touch": look_touch_id, "sound": ui.sound_enabled, "motion": ui.reduced_motion, "dials": ui.dials, "puzzle": ui.puzzle_index, "ending": ui.ending, "time": campaign.time_left, "rescues": campaign.rescues, "notice": ui.notice}
+	var data := {"renderer": "first-person-3d", "fps": Engine.get_frames_per_second(), "adapter": RenderingServer.get_video_adapter_name(), "yaw": view.yaw, "pitch": view.pitch, "flashlight": view.flashlight_enabled, "mode": ui.mode, "has_save": ui.has_save, "position": [campaign.position.x, campaign.position.y], "health": campaign.health, "stamina": campaign.stamina, "pumps": campaign.pumps, "fuses": campaign.fuse_count, "collected": campaign.collected, "logs": campaign.logs, "won": campaign.won, "assist": campaign.assist, "touch": ui.touch, "stick": [ui.joystick.x,ui.joystick.y], "move_touch": joystick_id, "look_touch": look_touch_id, "sound": ui.sound_enabled, "motion": ui.reduced_motion, "dials": ui.dials, "puzzle": ui.puzzle_index, "ending": ui.ending, "time": campaign.time_left, "rescues": campaign.rescues, "notice": ui.notice, "talked": campaign.talked, "flags": campaign.flags, "dialogue": ui.dialogue_line if ui.mode == "dialogue" else [], "options": ui.dialogue_options.size() if ui.mode == "dialogue" else 0, "radio": ui.radio_line}
 	var world := {"bounds": [140, 160, 2020, 1220], "canal": [1390, 630, 770, 140], "bridges": [], "obstacles": [], "pumps": [], "fuses": [], "logs": [], "exit": [HarborData.EXIT.x, HarborData.EXIT.y]}
-	for box in HarborData.BUILDINGS:
+	for box in HarborData.BUILDINGS + HarborData.SOLID_CACHE:
 		world.obstacles.append([box.position.x, box.position.y, box.size.x, box.size.y])
+	world["npcs"] = []
+	for point in HarborData.NPC_POSITIONS:
+		world.npcs.append([point.x, point.y])
 	for box in HarborData.BRIDGES:
 		world.bridges.append([box.position.x, box.position.y, box.size.x, box.size.y])
 	for point in HarborData.PUMPS:

@@ -1,5 +1,245 @@
 [
   {
+    "path": "audio/License.txt",
+    "sha256": "f3958560cf28562e87381b5ee962fb434e216c2132847dd802b991dcbf7c466e"
+  },
+  {
+    "path": "audio/gate_release.ogg",
+    "sha256": "2ebbbef20e1bfe2669d30032632eccea8b6debd53f09655f007466d1a59060ad"
+  },
+  {
+    "path": "audio/metal_hit.ogg",
+    "sha256": "30caf49fb019cfdf0da7d9f38adf931e02dd1621af5063fe64bb4d5296fad9c4"
+  },
+  {
+    "path": "audio/outflow_loop.ogg",
+    "sha256": "c0353d92c41d700f36a21d7e01a43a81418f79ec62821eb6422826c6600d5875"
+  },
+  {
+    "path": "audio/patrol_alarm.ogg",
+    "sha256": "c7d40cf5ed55721abfad203b25b0462c87d0228ee33b983957e761c4c56cc5b9"
+  },
+  {
+    "path": "audio/patrol_hum.ogg",
+    "sha256": "fc4ac232f9bf4ce563df9fd27404626b990710b8b131be3b7ba40a0e7f303964"
+  },
+  {
+    "path": "audio/pump_loop.ogg",
+    "sha256": "5204eb559657344ce287b56a186007530d1aa5d000bfadb67dae43cb31a9b67f"
+  },
+  {
+    "path": "audio/radio_static.ogg",
+    "sha256": "d9aa6bdf1dc085c75e230f43193a0341b490657f959fc181f068d4aa177536fc"
+  },
+  {
+    "path": "audio/rain_loop.ogg",
+    "sha256": "39994d46104ea3629bf99868d74d338b22fd6a3b345fb94645a4d4cdbd8003bd"
+  },
+  {
+    "path": "audio/step_metal_1.ogg",
+    "sha256": "9a92934051cd35c702a52a7d7ac11a6f0dbe2b1ac27188d6e6d7a589211b8d33"
+  },
+  {
+    "path": "audio/step_metal_2.ogg",
+    "sha256": "fcb561d594f36b1c3155823e7570a56f0596ebba009d663e2d0b9465a908defb"
+  },
+  {
+    "path": "audio/step_metal_3.ogg",
+    "sha256": "02483d244d6e2d77e9434a4f4f14a13d7175a735108b04fdb277ae74a10f1b61"
+  },
+  {
+    "path": "audio/step_wet_1.ogg",
+    "sha256": "bdb2c0c69ccbe43323e60c87fadec1c1498ca8c0c787a496bb2ced9b8a614922"
+  },
+  {
+    "path": "audio/step_wet_2.ogg",
+    "sha256": "8fe56a5ba8e5832b112ac76202bc7e383b7b4e08817fb1b969f41ee4583ff61e"
+  },
+  {
+    "path": "audio/step_wet_3.ogg",
+    "sha256": "15488200c14e51d2479ae78edc9d8b382c74cea626ec2c99bba936cbc759c1a5"
+  },
+  {
+    "path": "audio/thunder.ogg",
+    "sha256": "e893ec41c208a14f14a6c5b1b74f39531ad35e22ae26d373634707f6e195afee"
+  },
+  {
+    "path": "audio/valve.ogg",
+    "sha256": "f05f9c2822fb9fb153aa6f50e9d01b4b5baa0bd3fa6fd80eb6cb2f6fa047f82b"
+  },
+  {
+    "path": "audio/wave_a.ogg",
+    "sha256": "99a618075da92fbf3a7df1c387b73d594c3101f8eb9e7cae8ad67dd3e2c60852"
+  },
+  {
+    "path": "audio/wave_b.ogg",
+    "sha256": "7ddfe5d3dcb66e5160baa7de346665e3c2c14ea4bee12a0d63428f65c3f06b4b"
+  },
+  {
+    "path": "characters/License.txt",
+    "sha256": "a06bf7e68832d39721f4f83c62f23aa7f9886e8f026e66d0340e0f86b1d1d930"
+  },
+  {
+    "path": "characters/dax.glb",
+    "sha256": "2756bfdb2381dd07b44e69cc24a7b1725877a83da9909ddbd494bd748b452a79"
+  },
+  {
+    "path": "characters/dax_T_Eye_Brown.webp",
+    "sha256": "1c212146312dfa9b254669add7d7f9123d9a54efaf2ad940082e38823dfbf758"
+  },
+  {
+    "path": "characters/dax_T_Eye_Normal.webp",
+    "sha256": "7afb99ff4baf5521a8d1b98b4920bf0b2a8b89967732db6beca0eaf7eb83135c"
+  },
+  {
+    "path": "characters/dax_T_Hair_1_BaseColor.webp",
+    "sha256": "5e82b2988a490c1ed5a95db0c4b99a52409216fb77744133bf69b1b4ef3110f2"
+  },
+  {
+    "path": "characters/dax_T_Hair_1_Normal.webp",
+    "sha256": "6505cb28a082e09bf7680a18b1d6d9155874fa8c469a16b96fd71ce6ef90db6f"
+  },
+  {
+    "path": "characters/dax_T_Superhero_Male_Ligh.webp",
+    "sha256": "f64836281e191d6283c67efca31212d9dccca4173d739064313c02f69b11693a"
+  },
+  {
+    "path": "characters/dax_T_Superhero_Male_Normal.webp",
+    "sha256": "def63a64f990dabf0a493384b52aba0359f48bf462388fc57ca1ccf8a50e9ed1"
+  },
+  {
+    "path": "characters/dax_T_Superhero_Male_Roughness.webp",
+    "sha256": "4bb3e2b341d1602182802e5513ebf59701885fe7fffe5e2e23a2acea2fa4436e"
+  },
+  {
+    "path": "characters/evacuee_a.glb",
+    "sha256": "efd7b40962aa273806100f29e0ebbd2f710aacb11b9320f043e76b29db799ec7"
+  },
+  {
+    "path": "characters/evacuee_a_T_Eye_Brown.webp",
+    "sha256": "1c212146312dfa9b254669add7d7f9123d9a54efaf2ad940082e38823dfbf758"
+  },
+  {
+    "path": "characters/evacuee_a_T_Eye_Normal.webp",
+    "sha256": "7afb99ff4baf5521a8d1b98b4920bf0b2a8b89967732db6beca0eaf7eb83135c"
+  },
+  {
+    "path": "characters/evacuee_a_T_Hair_2_BaseColor.webp",
+    "sha256": "87c98bc08d88243b6e0a91fd58bcaa9c8b4a2211756381a09e8fed79513d69aa"
+  },
+  {
+    "path": "characters/evacuee_a_T_Hair_2_Normal.webp",
+    "sha256": "bcba3507b382741895f78330ea5f89a25f8d4868cc20f4822338e49b3abe7787"
+  },
+  {
+    "path": "characters/evacuee_a_T_Superhero_Female_Dark_BaseColor.webp",
+    "sha256": "25f366781a6c5717e185a19c655bfa40c3b08739a6c35d53f3e5098ae19d1622"
+  },
+  {
+    "path": "characters/evacuee_a_T_Superhero_Female_Normal.webp",
+    "sha256": "b34aa891de8de5e31c446283e84ef4e001db2fbc2fcd9dc54fe4da901c62a4bd"
+  },
+  {
+    "path": "characters/evacuee_a_T_Superhero_Female_Roughness.webp",
+    "sha256": "42c8ca048e58c518cb98b7933ef260093b9a539281b4f43c05945226232ff3c9"
+  },
+  {
+    "path": "characters/evacuee_b.glb",
+    "sha256": "118f3f3ccba65976baba4758dfdaff83aaf2341ea6552dab30b835671f5c2e4e"
+  },
+  {
+    "path": "characters/evacuee_b_T_Eye_Brown.webp",
+    "sha256": "1c212146312dfa9b254669add7d7f9123d9a54efaf2ad940082e38823dfbf758"
+  },
+  {
+    "path": "characters/evacuee_b_T_Eye_Normal.webp",
+    "sha256": "7afb99ff4baf5521a8d1b98b4920bf0b2a8b89967732db6beca0eaf7eb83135c"
+  },
+  {
+    "path": "characters/evacuee_b_T_Hair_1_BaseColor.webp",
+    "sha256": "5e82b2988a490c1ed5a95db0c4b99a52409216fb77744133bf69b1b4ef3110f2"
+  },
+  {
+    "path": "characters/evacuee_b_T_Hair_1_Normal.webp",
+    "sha256": "6505cb28a082e09bf7680a18b1d6d9155874fa8c469a16b96fd71ce6ef90db6f"
+  },
+  {
+    "path": "characters/evacuee_b_T_Superhero_Male_Ligh.webp",
+    "sha256": "f64836281e191d6283c67efca31212d9dccca4173d739064313c02f69b11693a"
+  },
+  {
+    "path": "characters/evacuee_b_T_Superhero_Male_Normal.webp",
+    "sha256": "def63a64f990dabf0a493384b52aba0359f48bf462388fc57ca1ccf8a50e9ed1"
+  },
+  {
+    "path": "characters/evacuee_b_T_Superhero_Male_Roughness.webp",
+    "sha256": "4bb3e2b341d1602182802e5513ebf59701885fe7fffe5e2e23a2acea2fa4436e"
+  },
+  {
+    "path": "characters/ivo.glb",
+    "sha256": "8d82f886c632f486517b4ed59e70fb151ca30fc520bc31f8462ca5d9ef3b369a"
+  },
+  {
+    "path": "characters/ivo_T_Eye_Brown.webp",
+    "sha256": "1c212146312dfa9b254669add7d7f9123d9a54efaf2ad940082e38823dfbf758"
+  },
+  {
+    "path": "characters/ivo_T_Eye_Normal.webp",
+    "sha256": "7afb99ff4baf5521a8d1b98b4920bf0b2a8b89967732db6beca0eaf7eb83135c"
+  },
+  {
+    "path": "characters/ivo_T_Hair_1_BaseColor.webp",
+    "sha256": "5e82b2988a490c1ed5a95db0c4b99a52409216fb77744133bf69b1b4ef3110f2"
+  },
+  {
+    "path": "characters/ivo_T_Hair_1_Normal.webp",
+    "sha256": "6505cb28a082e09bf7680a18b1d6d9155874fa8c469a16b96fd71ce6ef90db6f"
+  },
+  {
+    "path": "characters/ivo_T_Superhero_Male_Dark.webp",
+    "sha256": "707b0ec627fbbbe29b36a62e86f21925c5ba89223d3deaa412c0ca9b9a38ccec"
+  },
+  {
+    "path": "characters/ivo_T_Superhero_Male_Normal.webp",
+    "sha256": "def63a64f990dabf0a493384b52aba0359f48bf462388fc57ca1ccf8a50e9ed1"
+  },
+  {
+    "path": "characters/ivo_T_Superhero_Male_Roughness.webp",
+    "sha256": "4bb3e2b341d1602182802e5513ebf59701885fe7fffe5e2e23a2acea2fa4436e"
+  },
+  {
+    "path": "characters/sera.glb",
+    "sha256": "fff5eac24c00e607166ed84c3513a46f0fc48b96caf0f0e8b8ead1e863f68ee7"
+  },
+  {
+    "path": "characters/sera_T_Eye_Brown.webp",
+    "sha256": "1c212146312dfa9b254669add7d7f9123d9a54efaf2ad940082e38823dfbf758"
+  },
+  {
+    "path": "characters/sera_T_Eye_Normal.webp",
+    "sha256": "7afb99ff4baf5521a8d1b98b4920bf0b2a8b89967732db6beca0eaf7eb83135c"
+  },
+  {
+    "path": "characters/sera_T_Hair_2_BaseColor.webp",
+    "sha256": "87c98bc08d88243b6e0a91fd58bcaa9c8b4a2211756381a09e8fed79513d69aa"
+  },
+  {
+    "path": "characters/sera_T_Hair_2_Normal.webp",
+    "sha256": "bcba3507b382741895f78330ea5f89a25f8d4868cc20f4822338e49b3abe7787"
+  },
+  {
+    "path": "characters/sera_T_Superhero_Female_Light_BaseColor.webp",
+    "sha256": "412384072181e8657579c5d9a5710abd4e270f5fc21604dbb2e4aad8ece2c2e4"
+  },
+  {
+    "path": "characters/sera_T_Superhero_Female_Normal.webp",
+    "sha256": "b34aa891de8de5e31c446283e84ef4e001db2fbc2fcd9dc54fe4da901c62a4bd"
+  },
+  {
+    "path": "characters/sera_T_Superhero_Female_Roughness.webp",
+    "sha256": "42c8ca048e58c518cb98b7933ef260093b9a539281b4f43c05945226232ff3c9"
+  },
+  {
     "path": "concrete/Color.jpg",
     "sha256": "6bf11ddad96a2db2638f0fd2e4d129c266b3a3bfc1114e2fbae3e20c88f88f57"
   },
@@ -122,6 +362,342 @@
   {
     "path": "particles/spark_06.png",
     "sha256": "fe6d473393d3b9350c7a654b7cb5fbd343766b5b5b11d3e4aba476832d4a6d3f"
+  },
+  {
+    "path": "props/License.txt",
+    "sha256": "a326ddc98b4b4d335569e176264dec5c7b7d0c94a05bc6a9b3e88d97642e6c35"
+  },
+  {
+    "path": "props/barrel_01.glb",
+    "sha256": "24d4a922d90c9d08104b9fdde67063dd9757ac3a6f9d256e93c4591f8202fa3f"
+  },
+  {
+    "path": "props/barrel_01_Barrel_01_explosive_arm_1k.webp",
+    "sha256": "e1cdba55a5d2f69bbc4bf313628e3888029aa5d54febc81642d0101809b714d6"
+  },
+  {
+    "path": "props/barrel_01_Barrel_01_explosive_diff_1k.webp",
+    "sha256": "ab10d97bd12e0cc03caf32724d0efa571d9303836bb3633487a7264a65eb790c"
+  },
+  {
+    "path": "props/barrel_01_Barrel_01_explosive_nor_gl_1k.webp",
+    "sha256": "77ba9e3973039636df4193a0ec76c4f391ab667e5a4623a32711a266b0a4a7f6"
+  },
+  {
+    "path": "props/barrel_03.glb",
+    "sha256": "ab96cdef153c3c73f6c0e287bcaaaf4674a873c4d04349f2545f623b4dcbdd40"
+  },
+  {
+    "path": "props/barrel_03_barrel_03_arm_1k.webp",
+    "sha256": "5bbb3a92fcd49e40eb2b5abd7bfe31baa559da8846ae8339c8732a7dce741042"
+  },
+  {
+    "path": "props/barrel_03_barrel_03_diff_1k.webp",
+    "sha256": "3ccaf8546bc3d901ade91c9cc4ddd11f3cfbf472d56b80c4a1b25369e9dcb762"
+  },
+  {
+    "path": "props/barrel_03_barrel_03_nor_gl_1k.webp",
+    "sha256": "91d57a3fcc8daad1b384ba92d3059213788d36c4202367b8c128c2a794a6770c"
+  },
+  {
+    "path": "props/clipboard.glb",
+    "sha256": "f413703860f07d2db4797754fa994e0d53cfa96efa3cb0cbc7474207287307d4"
+  },
+  {
+    "path": "props/clipboard_clipboard_arm_1k.webp",
+    "sha256": "0c26ab241cf0a4ed4d1e31519a80a87557d083355ba833f6d8b3e558c642b436"
+  },
+  {
+    "path": "props/clipboard_clipboard_diff_1k.webp",
+    "sha256": "fa8da5e538e478217f89d69c84c12354d648aec891b6e6e964397d012297051b"
+  },
+  {
+    "path": "props/clipboard_clipboard_nor_gl_1k.webp",
+    "sha256": "49d6cfc780cb9581660aba5966447d4263b02db6f4e96c2dc035df4bd5bbdbf7"
+  },
+  {
+    "path": "props/hand_truck.glb",
+    "sha256": "27107fc003bd7dab2a16590a5ef5a1a090d172ac33a56a7d251017834af49c68"
+  },
+  {
+    "path": "props/hand_truck_hand_truck_arm_1k.webp",
+    "sha256": "97256de50a5e3701d003628265215eb3cf5db6a0b06d8b06e06bf94493bdff12"
+  },
+  {
+    "path": "props/hand_truck_hand_truck_diff_1k.webp",
+    "sha256": "72e57089cbdd35a1d5656da830d8f9a9733f4608e5d8a9e70de000f4ecfe05b9"
+  },
+  {
+    "path": "props/hand_truck_hand_truck_nor_gl_1k.webp",
+    "sha256": "b33dbc7f6071954fae7ebfe5bf598fec076c5293405fd8a34fdcdb509050ed53"
+  },
+  {
+    "path": "props/lifebuoy.glb",
+    "sha256": "beca23c3ec338c5325a1a7a01e85c2e93d280730ddaaccb705a483cb95730eb9"
+  },
+  {
+    "path": "props/lifebuoy_lifebuoy_arm_1k.webp",
+    "sha256": "c2da65caaa089f97771fac72ed5258a355ea5899849430be506c3755c3d3c1a2"
+  },
+  {
+    "path": "props/lifebuoy_lifebuoy_diff_1k.webp",
+    "sha256": "8125569cc5aebf0aa86cf9a0a045bc610496565b3d3e80c5590a4546cd83e937"
+  },
+  {
+    "path": "props/lifebuoy_lifebuoy_nor_gl_1k.webp",
+    "sha256": "9285acfc6246a97e66db531edfdbff587a36ca22c2980c02b6ab5562c4547d07"
+  },
+  {
+    "path": "props/medical_box.glb",
+    "sha256": "3685a696d684c0540412225d89d2f802ae1299a2c764c6be871d4a768cee748d"
+  },
+  {
+    "path": "props/medical_box_medical_box_arm_1k.webp",
+    "sha256": "b2b5b3c51fef8d69991775d00a6d0daa74be0231bef34929a5dce517f5140a62"
+  },
+  {
+    "path": "props/medical_box_medical_box_diff_1k.webp",
+    "sha256": "918104f505979097ecbb6d60fb76642c611f395037c9f62521b51da644ec5cf5"
+  },
+  {
+    "path": "props/medical_box_medical_box_nor_gl_1k.webp",
+    "sha256": "c21555317d9429c656e1b1285fca4d9dfc2c3e2e2ad34f8733fe087a5edb2972"
+  },
+  {
+    "path": "props/metal_jerrycan_green.glb",
+    "sha256": "703c58c1a57e624a122d7a859cb43580e15944f1fc7e4b66dfdc2feadd6add99"
+  },
+  {
+    "path": "props/metal_jerrycan_green_metal_jerrycan_green_arm_1k.webp",
+    "sha256": "e5c1c9f02f67a15f6fd75ccfcb1b0cb1aa3891940dc56b0d3d22684cb623b3e4"
+  },
+  {
+    "path": "props/metal_jerrycan_green_metal_jerrycan_green_diff_1k.webp",
+    "sha256": "0fbf40b353f87fe6c1fa6feecbca3da727436edc68f478507a2c201da1515ed4"
+  },
+  {
+    "path": "props/metal_jerrycan_green_metal_jerrycan_green_nor_gl_1k.webp",
+    "sha256": "0fda8dd71ef437bbf87e70b1c72b7402cac381a90235d7f08e7af98d39246420"
+  },
+  {
+    "path": "props/metal_toolbox.glb",
+    "sha256": "b60e76b17a26fc7c1b655c55362aba42aac0aff3f339cf95730599a08aba86af"
+  },
+  {
+    "path": "props/metal_toolbox_metal_toolbox_arm_1k.webp",
+    "sha256": "d5465e306708f1ffc18385577daabc4843146dc6f3192c73cfdf838012b27e9a"
+  },
+  {
+    "path": "props/metal_toolbox_metal_toolbox_diff_1k.webp",
+    "sha256": "8d242ef735aa8bd4d40abbbf8cffb44e2cf430baf5381749f4315bf3c3dc88b4"
+  },
+  {
+    "path": "props/metal_toolbox_metal_toolbox_nor_gl_1k.webp",
+    "sha256": "a050198fe1a2226b6b9b091878eef766308af697bae2ee13b635f30387b3ff0f"
+  },
+  {
+    "path": "props/modular_street_seating.glb",
+    "sha256": "166eb9e0cc8ea819be78a5cb26aa177ac83bcc0848904307420d444d89565996"
+  },
+  {
+    "path": "props/modular_street_seating_modular_street_seating_armrests_arm_1k.webp",
+    "sha256": "d47b38c4fb2f643ee9f9e2b6cacd16b7d7a50547c3f232b7a709d3e6ace9891d"
+  },
+  {
+    "path": "props/modular_street_seating_modular_street_seating_armrests_diff_1k.webp",
+    "sha256": "fba123dbeb94aeddc9cded85e05c21fed8c9002acd43ae0dc28ede05eb7aa20b"
+  },
+  {
+    "path": "props/modular_street_seating_modular_street_seating_armrests_nor_gl_1k.webp",
+    "sha256": "a21fb21367b38381a03cb1d4151a4bdf4b969dd9e9fca1a2e1ad06b5a4b9a0a0"
+  },
+  {
+    "path": "props/modular_street_seating_modular_street_seating_connectors_arm_1k.webp",
+    "sha256": "7f59823e9b1f4682db9f8f1b0bee171a16265e560575425d5aa5f21fa19662a9"
+  },
+  {
+    "path": "props/modular_street_seating_modular_street_seating_connectors_diff_1k.webp",
+    "sha256": "73915fec75c820a033641b4c8c869a65a01b9732c7cecaa7ae93823a1c1df644"
+  },
+  {
+    "path": "props/modular_street_seating_modular_street_seating_connectors_nor_gl_1k.webp",
+    "sha256": "dbd9c7adf5bc49fe0f84dd2d90f213b264bf3a9d16d823492bdab0724ddb8841"
+  },
+  {
+    "path": "props/modular_street_seating_modular_street_seating_supports_arm_1k.webp",
+    "sha256": "b084150c0b595c093af532804dfe09d3fbace3fc7a66f8014fb4ff5af2c03564"
+  },
+  {
+    "path": "props/modular_street_seating_modular_street_seating_supports_diff_1k.webp",
+    "sha256": "bb5e7723859b4cbe9af04262b94070034f198e1dcfda048c3aa79195250702c2"
+  },
+  {
+    "path": "props/modular_street_seating_modular_street_seating_supports_nor_gl_1k.webp",
+    "sha256": "b04af4cf3a5d098f31e83c8726d5fa0bd08649c00c53a8f251e4c3676fd6ccc2"
+  },
+  {
+    "path": "props/modular_street_seating_modular_street_seating_timber_arm_1k.webp",
+    "sha256": "752dc22fc07a10b53656d192b7ee998b3d14b9699ff15fda6380f607e4c5c614"
+  },
+  {
+    "path": "props/modular_street_seating_modular_street_seating_timber_diff_1k.webp",
+    "sha256": "5c00a56b9df9e8df8186355c3182915c7ec0aa25fe7471ed2d1d0136601dc945"
+  },
+  {
+    "path": "props/modular_street_seating_modular_street_seating_timber_nor_gl_1k.webp",
+    "sha256": "78c840fba33010f29c9bca5bcf88ba79fc4a4dc5b24f99911e46ff3d8743d66b"
+  },
+  {
+    "path": "props/old_military_crate.glb",
+    "sha256": "fb4f47b2814ff506bea4100a723c5a5d0026f8ae75a5140d529e1dc05dc9a3c7"
+  },
+  {
+    "path": "props/old_military_crate_old_military_crate_arm_1k.webp",
+    "sha256": "41a4a8987235753022edc70ba99b737ea27b1faf78f6f083b986dc3e050cb011"
+  },
+  {
+    "path": "props/old_military_crate_old_military_crate_diff_1k.webp",
+    "sha256": "01e15db8f132d5aaa079132422a7acc1c9841f276a4babfcf196cbcf45337e52"
+  },
+  {
+    "path": "props/old_military_crate_old_military_crate_nor_gl_1k.webp",
+    "sha256": "aa8817af4c157b39f25c9443cf6e6cbaedca7aeada18d0af2763f2aa33476780"
+  },
+  {
+    "path": "props/old_tyre.glb",
+    "sha256": "4441be06c20d621a6e3f8d9c660369b7282b86392d665fa4992c64bd13a39552"
+  },
+  {
+    "path": "props/old_tyre_old_tyre_arm_1k.webp",
+    "sha256": "f149fd3e8b1d2d7241e07d8039627440d1e287d0b89d5855c6c78b55ea11b873"
+  },
+  {
+    "path": "props/old_tyre_old_tyre_diff_1k.webp",
+    "sha256": "c558887934fb0ce5d80b9a22f86d31df296cda8f711c753c7409352bdce9b7d3"
+  },
+  {
+    "path": "props/old_tyre_old_tyre_nor_gl_1k.webp",
+    "sha256": "f85d76dcafc3db5ba69666a6068a3e20ca569798fc0f2f6fe822c44013659fe2"
+  },
+  {
+    "path": "props/plastic_crate_03.glb",
+    "sha256": "c1065df7c47a03b7bb25b2775a8216ea685a6c63312e31b2a51952d5239d8884"
+  },
+  {
+    "path": "props/plastic_crate_03_plastic_crate_03_arm_1k.webp",
+    "sha256": "78e00d62d6851102a601a84eb49abf83d099819aa72e195330693925d7b98586"
+  },
+  {
+    "path": "props/plastic_crate_03_plastic_crate_03_diff_1k.webp",
+    "sha256": "a14399d0ee8a3eaa4425ea89b7ffb6417c9431b3b597d53fdb0806717ff05a08"
+  },
+  {
+    "path": "props/plastic_crate_03_plastic_crate_03_nor_gl_1k.webp",
+    "sha256": "7f9ce5be7f7b59bd287c6db7994a70659870347086f75ad745849f0f759f671a"
+  },
+  {
+    "path": "props/portable_generator.glb",
+    "sha256": "95d3b33201d242cd8edefe39a7f15941a7814709e27c3101ec523377f3455c5f"
+  },
+  {
+    "path": "props/portable_generator_portable_generator_arm_1k.webp",
+    "sha256": "d447917788ab37f9fe9404b20b29ffd8ab272fd7700de4aad8e3416e248085f3"
+  },
+  {
+    "path": "props/portable_generator_portable_generator_diff_1k.webp",
+    "sha256": "ee50e1ec0e50102f84b4843d98cf0e6030fd01e02d41042b2e543c615e985451"
+  },
+  {
+    "path": "props/portable_generator_portable_generator_nor_gl_1k.webp",
+    "sha256": "b64ed3a2097a8622075f20e6e395df3c4e9f8d8003df829cc7aeeeb4f013ca63"
+  },
+  {
+    "path": "props/portable_searchlight.glb",
+    "sha256": "92270b98cabe3a26bc3f3de3e48e82bc3bd2c7d73bce9d202edb30ac4510c15f"
+  },
+  {
+    "path": "props/portable_searchlight_portable_searchlight_arm_1k.webp",
+    "sha256": "b4e4100b5652da8bf9bbef72bd26d40a9e50cffde2088c36331097f2e7bbcb48"
+  },
+  {
+    "path": "props/portable_searchlight_portable_searchlight_diff_1k.webp",
+    "sha256": "fe1a962fc74714a261fad4909c2deb6242501412a37a18427f60d9bf67f49e70"
+  },
+  {
+    "path": "props/portable_searchlight_portable_searchlight_nor_gl_1k.webp",
+    "sha256": "cfaa27d7c2b88ba5c4fdf239214d75b5d1f5147a97664f08fa84129c040bad00"
+  },
+  {
+    "path": "props/propane_tank.glb",
+    "sha256": "e2377ea444af56c17889cd25c29930ff9bc70ba2a4989d84aa1d9e3d151d284d"
+  },
+  {
+    "path": "props/propane_tank_propane_tank_arm_1k.webp",
+    "sha256": "4a57aea13c8fcde0db6ac600e725e50b16ede17a3ff65292b4c0f83b18e823e9"
+  },
+  {
+    "path": "props/propane_tank_propane_tank_diff_1k.webp",
+    "sha256": "3af42f86cc994dc5f1c37c2c346fe4c45718685fe56d5ffa9117962d184205a3"
+  },
+  {
+    "path": "props/propane_tank_propane_tank_nor_gl_1k.webp",
+    "sha256": "49110a3e4f4c2e67464cb26718a1d5b28a25100f812ba7064c90a93c488d4e5d"
+  },
+  {
+    "path": "props/security_light.glb",
+    "sha256": "540614320dcbe48dfe3fb5cce6cc11cfbf057c3acf7b8534f0ee4afddfa8b6ed"
+  },
+  {
+    "path": "props/security_light_security_light_arm_1k.webp",
+    "sha256": "cd039f5d675b0c857b628d4246029bbb0244e283b999e1978e8c15f9015d9493"
+  },
+  {
+    "path": "props/security_light_security_light_diff_1k.webp",
+    "sha256": "9f88beae24cc71e89a4dee3a42aa723b89be8c0439fffd4f9d87c4bd4f1efaa8"
+  },
+  {
+    "path": "props/security_light_security_light_nor_gl_1k.webp",
+    "sha256": "fdc92dc07adb883d0ed19868074aca5220c2728e80475d8d17a91d78fe23e994"
+  },
+  {
+    "path": "props/trashbag.glb",
+    "sha256": "cb163ec8cd74a2203b4161f9d212f9dba97b8a501a2ffc49eb850154cb1c951b"
+  },
+  {
+    "path": "props/trashbag_trashbag_arm_1k.webp",
+    "sha256": "b81855d16436c914c98d1f752fc1a16e9cf33b560020055b8d68c11b1edb5863"
+  },
+  {
+    "path": "props/trashbag_trashbag_diff_1k.webp",
+    "sha256": "320ebe49ef28aa44c9b860814cb6735cbe9a95f1340fa7debe32420793a017ac"
+  },
+  {
+    "path": "props/trashbag_trashbag_nor_gl_1k.webp",
+    "sha256": "bc8da0e870e580a3955a3ddd08f84fb055086c7f7b28793b372e9192894309cf"
+  },
+  {
+    "path": "props/utility_box_01.glb",
+    "sha256": "58cbb4084a5390d90d0827da195b22c464e6f51a4f1bc94742a4f20985574e70"
+  },
+  {
+    "path": "props/utility_box_01_utility_box_01_arm_1k.webp",
+    "sha256": "5db865043a3e2c81251d13a15c307c60662ffcf633b6355f1fcae97e9c55740f"
+  },
+  {
+    "path": "props/utility_box_01_utility_box_01_diff_1k.webp",
+    "sha256": "c23693938865c3bbe4b2b2105a8067c853df91b53932a788a27bbc242ae6d753"
+  },
+  {
+    "path": "props/utility_box_01_utility_box_01_nor_gl_1k.webp",
+    "sha256": "720a6ffdd9a7f43ff5954576f625dc21a1f2e3d0370902a32f4769388234fd04"
+  },
+  {
+    "path": "sky/License.txt",
+    "sha256": "dac4b068523a744c7be24dc75f2fce36e789350e2dbec6853c703914b56e06b9"
+  },
+  {
+    "path": "sky/storm_clouds.jpg",
+    "sha256": "d26bed92901cc93e6eb82d7f4f02e5122366de03d3c7cc8cf0ab3918f41f61f6"
   },
   {
     "path": "survival/License.txt",

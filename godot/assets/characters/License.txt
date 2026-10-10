@@ -1,0 +1,7 @@
+Characters: Quaternius "Universal Base Characters" and "Universal Animation Library"
+https://quaternius.itch.io/universal-base-characters
+https://quaternius.itch.io/universal-animation-library
+License: CC0 1.0 Universal (public domain dedication)
+https://creativecommons.org/publicdomain/zero/1.0/
+Clothing, hair tint and selection of animation clips were made for TIDELOCK
+with scripts/assets/build_characters.py (MIT).

@@ -1,0 +1,7 @@
+Sound effects from OpenGameArt.org, all marked CC0 1.0 Universal:
+  "AMB Rain Loop 1" by Kresiek The Furry
+  "30 CC0 SFX loops" and "100 CC0 SFX #2" by rubberduck
+  "Metal footsteps on concrete" by Thimras
+  "Beach Ocean Waves" by jasinski
+https://creativecommons.org/publicdomain/zero/1.0/
+Trimmed, converted to mono and loudness-normalised with scripts/assets/build_audio.sh.

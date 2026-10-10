@@ -5,13 +5,22 @@ quay, recover ceramic fuses, restore three pumps, avoid maintenance machines,
 and reach evacuation before the next tide. Read the shift logs and decide where
 the recovery record goes at the ending.
 
-The Godot project is in [`godot/`](godot/). The earlier Three.js engine,
-TypeScript tests, and authored campaign material remain in the repository for
-reference. The active GitHub Pages pipeline builds and playtests the Godot game.
+The Godot project is in [`godot/`](godot/). The GitHub Pages pipeline builds
+and playtests it. The earlier Three.js prototype was removed; it remains in git
+history up to commit `6fda439`.
 
-This release is one complete harbor mission, designed for roughly 5–10 minutes
-of play, with imported CC0 assets, a stormy industrial quay, flashlight, rain,
-animated water, four patrol machines and a hand-held repair tool.
+This release is one complete harbor mission, designed for roughly 10–15 minutes
+of play. The quay is not empty: Ivo keeps the clinic's oxygen running at the
+depot, Dax Ren of the Quay Ledger wants a name for the weir closure, and Sera
+Holt talks you through the storm on the radio before meeting you at the
+evacuation point. Conversations have subtitles and reply choices, and those
+choices change what the ending says.
+
+Everything on screen is open source: animated people built from Quaternius's
+CC0 base characters and dressed in Blender 5.2, realistic Poly Haven props and
+sky, Kenney structures, and CC0 rain, thunder, wave, pump and machine sounds
+from OpenGameArt. Lightning, wave spray, pump outflow and rain splashes are
+authored in Godot.
 
 ## Play
 
@@ -32,7 +41,9 @@ the lower area beside the buttons. Keep your left thumb down to move while looki
 | Flashlight | F | LIGHT |
 | Hop | Space | — |
 | Run | Shift | Hold RUN |
-| Use / collect / open pump / read log | E | USE |
+| Use / collect / open pump / read log / talk | E | USE |
+| Continue a conversation | E or Space | CONTINUE |
+| Pick a reply | 1 / 2 / 3 | Tap the reply |
 | Pause nearby machines for 5 seconds | Q | PULSE |
 | Map and shift record | Tab | LOG |
 | Pause | Escape | II |
@@ -100,15 +111,36 @@ CC0 textures; the web build keeps dynamic shadows disabled for mobile performanc
 The diagnostic `window.tidelockState` is read-only observation; it cannot alter
 campaign state. Screenshots and results are written to `test-results/godot/`.
 
+## Rebuild the art and sound
+
+The generated characters, props, sounds and sky are committed under
+`godot/assets/`, so building the game never needs Blender. To regenerate them
+from their CC0 sources (Blender 5.2, ffmpeg and the pinned Godot are required):
+
+```bash
+BLENDER=/path/to/blender-5.2 bash scripts/assets/build_all.sh
+```
+
+`scripts/assets/fetch_sources.py` downloads and verifies the sources (Poly Haven
+MD5s from its API, pinned SHA-256 for the Quaternius and OpenGameArt packs).
+`build_characters.py` dresses each cast member: it decimates the base body,
+models a rain jacket, trousers and rubber boots from the body surface with the
+skin weights intact, removes covered skin, bakes cloth occlusion, attaches hair
+and keeps only the animation clips that character uses. `build_props.py`
+decimates and resizes the Poly Haven models, `build_audio.sh` normalises and
+trims the sounds, and `build_sky.sh` cuts the storm cloud band.
+
 ## Layout
 
 - `godot/scripts/campaign.gd`: mission state, fixed-step movement, patrols, repairs, checkpoints.
-- `godot/scripts/harbor_data.gd`: harbor geometry, objectives, patrol routes, authored shift logs.
-- `godot/scripts/first_person_view.gd`: first-person camera, imported models, lights, rain, water and patrols.
-- `godot/scripts/interface.gd`: menu, HUD, journal, pump panels, settings, ending.
+- `godot/scripts/harbor_data.gd`: harbor geometry, objectives, patrol routes, people, props, authored shift logs.
+- `godot/scripts/story.gd`: conversations, reply choices and radio lines.
+- `godot/scripts/first_person_view.gd`: first-person camera, people, props, lights, weather, water, patrols and 3D sound.
+- `godot/scripts/interface.gd`: menu, HUD, radio subtitles, conversations, journal, pump panels, settings, ending.
 - `godot/scripts/main.gd`: input and composition of the game systems.
-- `godot/scripts/soundscape.gd`: original storm ambience and Kenney CC0 footsteps/interaction SFX.
+- `godot/scripts/soundscape.gd`: rain, wind, thunder, radio, footsteps and interface sound.
 - `scripts/godot/`: verified installation, build, and browser playtests.
+- `scripts/assets/`: the Blender/ffmpeg pipeline that produces the characters, props, sounds and sky.
 
 All campaign simulation advances in Godot's fixed physics step. Menus, journal,
 and pump panels stop the campaign clock. Font assets carry their licence in

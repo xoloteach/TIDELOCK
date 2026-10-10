@@ -1,0 +1,4 @@
+Props: Poly Haven models (https://polyhaven.com), by their respective Poly Haven authors.
+License: CC0 1.0 Universal (public domain dedication)
+https://polyhaven.com/license
+Decimated and texture-reduced for the web with scripts/assets/build_props.py.
