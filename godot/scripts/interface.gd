@@ -3,6 +3,7 @@ extends Control
 
 signal command(action: String)
 signal mode_changed
+signal radio_started
 var campaign: Campaign
 var mode := "title"
 var buttons: Array[Button] = []
@@ -24,6 +25,12 @@ var has_save := false
 var title_error := ""
 var clock := 0.0
 var hit_flash := 0.0
+# Radio subtitles play over gameplay; conversations use the "dialogue" mode.
+var radio_queue: Array = []
+var radio_line: Array = []
+var radio_time := 0.0
+var dialogue_line: Array = []
+var dialogue_options: Array = []
 const INK := Color("102226")
 const PAPER := Color("e6e4cc")
 const MUTED := Color("94aba5")
@@ -39,7 +46,21 @@ func _process(delta: float) -> void:
 	clock += delta
 	if mode == "playing":
 		notice_time = maxf(0, notice_time - delta)
+		radio_time -= delta
+		if radio_time <= 0.0:
+			radio_line = radio_queue.pop_front() if not radio_queue.is_empty() else []
+			radio_time = Story.duration(radio_line[1]) if not radio_line.is_empty() else 0.0
+			if not radio_line.is_empty():
+				radio_started.emit()
 	queue_redraw()
+
+func radio(lines: Array) -> void:
+	radio_queue.append_array(lines)
+
+func clear_radio() -> void:
+	radio_queue.clear()
+	radio_line = []
+	radio_time = 0.0
 
 func inform(text: String) -> void:
 	notice = text.replace("[E]", "USE").replace("[Tab]", "LOG").replace("[Q]", "PULSE") if touch else text
@@ -101,6 +122,12 @@ func show_mode(value: String) -> void:
 				button("FILE IT WITH THE RECOVERY TEAM", Rect2(250, 505, 780, 52), "archive")
 			else:
 				button("RETURN TO TITLE", Rect2(460, 593, 360, 52), "title")
+		"dialogue":
+			if dialogue_options.is_empty():
+				button("CONTINUE   " + ("" if touch else "[E]"), Rect2(830, 640, 320, 48), "advance")
+			else:
+				for i in range(dialogue_options.size()):
+					button(("" if touch else "%d   " % (i + 1)) + str(dialogue_options[i][0]), Rect2(250, 470 + i * 62, 780, 52), "choose_%d" % i)
 		"confirm_new":
 			button("START NEW MISSION", Rect2(430, 379, 420, 52), "new_confirmed")
 			button("KEEP CHECKPOINT", Rect2(430, 446, 420, 52), "title")
@@ -134,6 +161,10 @@ func button(text: String, box: Rect2, action: String) -> Button:
 			layout.position.y = 535
 		elif mode == "confirm_new" and action == "title":
 			layout.position.y = 480
+		elif mode == "dialogue" and action.begins_with("choose_"):
+			layout.position.y = 400 + int(action.trim_prefix("choose_")) * 92
+		elif mode == "dialogue":
+			layout.position.y = 620
 	b.position = layout.position
 	b.size = layout.size
 	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
@@ -158,6 +189,9 @@ func button(text: String, box: Rect2, action: String) -> Button:
 func _draw() -> void:
 	if mode == "playing":
 		hud()
+		return
+	if mode == "dialogue":
+		conversation()
 		return
 	if mode == "title":
 		for i in range(12):
@@ -189,14 +223,14 @@ func _draw() -> void:
 			text(Vector2(431, 624 if touch else 538), "Explorer mode removes damage and stops the tide clock.", 14, MUTED)
 		"credits":
 			heading("END OF THE SHIFT SHEET", "TIDELOCK / GODOT HARBOR EDITION")
-			paragraph(Vector2(300, 282), "Morrow Quay and its characters / TIDELOCK project\nModels & SFX / Kenney industrial, survival, impact, interface (CC0)\nConcrete / ambientCG Concrete030 (CC0)\nRain, water, interface and story / TIDELOCK source assets\nEngine / Godot 4.7.2, MIT licence\nField typeface / DejaVu Sans, Bitstream Vera licence\n\nSource code and asset licence notices accompany the web build.\nGodot engine licence: godotengine.org/license", 680, 17, PAPER, 28)
+			paragraph(Vector2(250, 270), "Morrow Quay, its people and story / TIDELOCK project\nPeople / Quaternius Universal Base Characters + Animation Library (CC0), dressed in Blender 5.2\nProps & sky / Poly Haven (CC0)    Structures & SFX / Kenney (CC0)\nRain, pumps, machines, waves, steps / OpenGameArt: Kresiek, rubberduck, Thimras, jasinski (CC0)\nConcrete / ambientCG Concrete030 (CC0)\nEngine / Godot 4.7.2, MIT licence    Typeface / DejaVu Sans\n\nSource code and asset licence notices accompany the web build.", 780, 16, PAPER, 27)
 		"help":
 			heading("RECOVERY MANUAL", "ONE QUAY / THREE PUMPS / ONE WAY HOME")
 			var rows := [
 				["01", "Find ceramic fuses in the amber supply boxes."],
 				["02", "Carry a fuse to a pump. Match each rotary valve to its marked direction."],
 				["03", "Avoid machine search cones. Walls block sight; pulse buys five seconds."],
-				["04", "Restore all three pumps, then reach the east evacuation beacon."]
+				["04", "Talk to people on the quay. Restore all three pumps, then reach the east evacuation beacon."]
 			]
 			for i in range(rows.size()):
 				text(Vector2(240, 267 + i * 59), rows[i][0], 23, AMBER)
@@ -210,6 +244,11 @@ func _draw() -> void:
 				text(Vector2(635, 253 + i * 47), ("✓ " if campaign.pumps[i] else "○ ") + HarborData.PUMP_NAMES[i], 20, MINT if campaign.pumps[i] else AMBER)
 			text(Vector2(635, 410), "THE MISSING 37 MINUTES", 17, PAPER)
 			paragraph(Vector2(635, 440), "Recovered shift logs: %d / 3.\nPaper markers on the map hold accounts from Sera, Dax and Ivo. Read them before filing the recovery report." % campaign.logs.count(true), 490, 17, MUTED)
+			var met := []
+			for i in range(3):
+				if campaign.talked[i]:
+					met.append(Story.speaker_name(HarborData.NPC_IDS[i]))
+			text(Vector2(635, 548), "SPOKEN WITH  /  " + (", ".join(met) if not met.is_empty() else "NOBODY YET"), 14, PAPER)
 			text(Vector2(165, 575), "● MARA    ◇ FUSE    ○ PUMP    ▪ SHIFT LOG    + EVAC", 14, MUTED)
 		"log":
 			heading("RECOVERED SHIFT LOG", "PAPER RECORD / MORROW QUAY")
@@ -267,9 +306,16 @@ func hud() -> void:
 		text(stick_origin + Vector2(-61,7), "‹", 26, PAPER,true)
 		text(stick_origin + Vector2(61,7), "›", 26, PAPER,true)
 		text(Vector2(820,693), "DRAG RIGHT SIDE TO LOOK", 15, MUTED,true)
+	if not radio_line.is_empty():
+		var who: String = radio_line[0]
+		panel(Rect2(370, 166, 540, 74), 0.9)
+		text(Vector2(390, 188), "RADIO  /  " + Story.speaker_name(who), 11, Story.speaker_color(who))
+		paragraph(Vector2(390, 212), radio_line[1], 500, 16, PAPER, 21)
 	var near := campaign.nearest()
 	if not near.kind.is_empty():
-		var hint: String = {"fuse": "RECOVER CERAMIC FUSE", "pump": "OPEN MANUAL PUMP PANEL", "log": "READ SHIFT LOG", "exit": "REACH EVACUATION BEACON"}[near.kind]
+		var hint: String = {"fuse": "RECOVER CERAMIC FUSE", "pump": "OPEN MANUAL PUMP PANEL", "log": "READ SHIFT LOG", "exit": "REACH EVACUATION BEACON", "npc": "TALK"}[near.kind]
+		if near.kind == "npc":
+			hint = "TALK TO " + Story.speaker_name(HarborData.NPC_IDS[near.index])
 		if near.kind == "pump" and campaign.fuse_count == 0:
 			hint = "PUMP NEEDS A FUSE / FIND AN AMBER BOX"
 		panel(Rect2(375, 582, 530, 47), 0.95)
@@ -278,6 +324,21 @@ func hud() -> void:
 		panel(Rect2(340, 449, 600, 112), 0.94)
 		text(Vector2(360, 474), "FIELD RADIO", 11, AMBER)
 		paragraph(Vector2(360, 500), notice, 556, 16, PAPER, 23)
+
+func conversation() -> void:
+	# Letterbox bars keep the speaker visible in the 3D view behind the subtitles.
+	draw_rect(Rect2(0, 0, 1280, 84), Color(0.01, 0.03, 0.035, 0.92))
+	var top := 375.0 if not dialogue_options.is_empty() else 520.0
+	if touch and not dialogue_options.is_empty():
+		top = 300.0
+	draw_rect(Rect2(0, top - 40, 1280, 760 - top), Color(0.01, 0.03, 0.035, 0.86))
+	if dialogue_line.is_empty():
+		return
+	var who: String = dialogue_line[0]
+	text(Vector2(250, top - 6), Story.speaker_name(who), 15, Story.speaker_color(who))
+	line(Vector2(250, top + 4), Vector2(1030, top + 4), Color(Story.speaker_color(who), 0.4))
+	paragraph(Vector2(250, top + 36), dialogue_line[1], 780, 22, PAPER, 31)
+	text(Vector2(640, 50), "MORROW QUAY  /  " + ("CHOOSE A REPLY" if not dialogue_options.is_empty() else ("TAP CONTINUE" if touch else "E OR SPACE TO CONTINUE   •   ESC TO END")), 12, MUTED, true)
 
 func puzzle() -> void:
 	heading(HarborData.PUMP_NAMES[puzzle_index], "MANUAL BYPASS / ONE CERAMIC FUSE WILL BE INSTALLED")
@@ -305,8 +366,14 @@ func ending_screen() -> void:
 		paragraph(Vector2(250, 318), "The recovery report needs a destination. %d of 3 shift logs recovered.\nSending the full record exposes the missing interval; filing it with the recovery team keeps the work and testimony together. Neither brings the evacuated city back tonight." % campaign.logs.count(true), 780, 19, MUTED, 29)
 	else:
 		var outcome := "DAX / I've got the packet. Names, dates, the feeder decision. I'll call each person before I print it."
+		if "dax_mismatch" in campaign.flags:
+			outcome += " \"A municipal technician on site.\" Front page. Still true."
+		elif "dax_protect" in campaign.flags:
+			outcome += " Holt's name stays out. The ten seconds go in."
 		if ending == "archive":
 			outcome = "IVO / Put my feeder decision on the first page. The next shift needs it before they touch a switch."
+			if "ivo_trust" in campaign.flags:
+				outcome += " And go and sleep, Venn. That isn't advice."
 		paragraph(Vector2(250, 340), outcome, 780, 24, PAPER, 36)
 		text(Vector2(640, 464), "RECORD SENT" if ending == "broadcast" else "RECORD FILED", 17, AMBER, true)
 		text(Vector2(640, 516), "%d / 3 LOGS RECOVERED     •     %d RESCUES     •     %02d:%02d TIDE REMAINING" % [campaign.logs.count(true), campaign.rescues, int(campaign.time_left) / 60, int(campaign.time_left) % 60], 14, MUTED, true)
@@ -333,6 +400,9 @@ func minimap(box: Rect2, detailed: bool = false) -> void:
 		if detailed:
 			var l: Vector2 = box.position + HarborData.LOGS[i] * factor
 			draw_rect(Rect2(l - Vector2(2, 3), Vector2(5, 6)), MUTED)
+	for i in range(HarborData.NPC_IDS.size()):
+		var person: Vector2 = box.position + HarborData.NPC_POSITIONS[i] * factor
+		draw_circle(person, 3.5 if detailed else 2.5, Story.speaker_color(HarborData.NPC_IDS[i]))
 	var player_pos := box.position + campaign.position * factor
 	draw_circle(player_pos, 5 if detailed else 4, PAPER)
 	line(player_pos,player_pos + Vector2(-sin(campaign.look_yaw),-cos(campaign.look_yaw))*13,PAPER,2)

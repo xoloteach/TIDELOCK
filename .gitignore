@@ -15,3 +15,6 @@ test-results/
 # Godot import/editor cache (sources and .uid files stay tracked)
 godot/.godot/
 .godot-tools/
+
+# Downloaded CC0 sources for scripts/assets (rebuilt on demand)
+.asset-cache
