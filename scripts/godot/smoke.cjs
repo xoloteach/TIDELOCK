@@ -30,9 +30,37 @@ function pathfind(start,target,w,open){const grid=30;const key=p=>p.join(',');co
  // Collapse straight sections; keep every turn and verify shortcut visibility.
  const result=[];let at=start;for(let i=0;i<points.length;){let far=i;while(far+1<points.length&&(()=>{const dx=Math.abs(points[far+1][0]-at[0]),dy=Math.abs(points[far+1][1]-at[1]);return dx<1||dy<1||Math.abs(dx-dy)<1;})()&&clear(at,points[far+1],w,open))far++;result.push(points[far]);at=points[far];i=far+1;}return result;
 }
-async function walk(page,target){s=await state(page);const open=s.pumps.every(Boolean);const points=pathfind(s.position,target,s.world,open);const pulse=setInterval(()=>page.keyboard.press('q').catch(()=>{}),9800);
- try{for(const point of points){for(let attempt=0;attempt<25;attempt++){s=await state(page);if(distance(s.position,point)<19)break;const wx=point[0]-s.position[0],wy=point[1]-s.position[1];const dx=wx*Math.cos(s.yaw)-wy*Math.sin(s.yaw),dy=wx*Math.sin(s.yaw)+wy*Math.cos(s.yaw);const keys=[];if(Math.abs(dx)>12)keys.push(dx>0?'d':'a');if(Math.abs(dy)>12)keys.push(dy>0?'s':'w');if(!keys.length)break;for(const k of keys)await page.keyboard.down(k);await page.waitForTimeout(Math.min(700,Math.max(70,distance(s.position,point)/175*1000-80)));for(const k of keys)await page.keyboard.up(k);await page.waitForTimeout(190);}}
- }finally{clearInterval(pulse);for(const k of ['w','a','s','d'])await page.keyboard.up(k);}s=await state(page);assert.ok(distance(s.position,target)<70,`arrived at ${target}: ${s.position}`);}
+async function walk(page,target){
+ const pulse=setInterval(()=>page.keyboard.press('q').catch(()=>{}),9800);
+ try {
+  // A patrol rescue or an overshot corner invalidates the old route. Replan from
+  // observed gameplay state instead of continuing through its remaining walls.
+  for(let route=0;route<4;route++){
+   let s=await state(page);if(distance(s.position,target)<30)return;
+   const rescues=s.rescues,points=pathfind(s.position,target,s.world,s.pumps.every(Boolean));
+   let replan=false;
+   for(const point of points){
+    let reached=false;
+    for(let attempt=0;attempt<25;attempt++){
+     s=await state(page);
+     if(s.rescues!==rescues){replan=true;break;}
+     if(distance(s.position,point)<19){reached=true;break;}
+     const wx=point[0]-s.position[0],wy=point[1]-s.position[1];
+     const dx=wx*Math.cos(s.yaw)-wy*Math.sin(s.yaw),dy=wx*Math.sin(s.yaw)+wy*Math.cos(s.yaw);
+     const keys=[];if(Math.abs(dx)>12)keys.push(dx>0?'d':'a');if(Math.abs(dy)>12)keys.push(dy>0?'s':'w');
+     if(!keys.length){reached=true;break;}
+     for(const k of keys)await page.keyboard.down(k);
+     await page.waitForTimeout(Math.min(700,Math.max(70,distance(s.position,point)/175*1000-80)));
+     for(const k of keys)await page.keyboard.up(k);
+     await page.waitForTimeout(190);
+    }
+    if(replan||!reached){console.log('Replanning walk',target,(await state(page)).position);break;}
+   }
+   s=await state(page);if(distance(s.position,target)<70)return;
+  }
+  const s=await state(page);assert.fail(`arrived at ${target}: ${s.position}; rescues=${s.rescues}`);
+ }finally{clearInterval(pulse);for(const k of ['w','a','s','d'])await page.keyboard.up(k);}
+}
 async function repair(page,index){await page.keyboard.press('e');await mode(page,'puzzle');const before=await state(page);await page.keyboard.press('e');await page.waitForTimeout(200);check((await state(page)).mode==='puzzle','incorrect circuit cannot energize pump');const targets=[[0,1,3],[2,0,1],[1,3,2]][index];
  for(let i=0;i<3;i++){const turns=(targets[i]-before.dials[i]+4)%4;for(let j=0;j<turns;j++){await page.keyboard.press(String(i+1));await page.waitForTimeout(70);}}
  await page.keyboard.press('e');await mode(page,'playing');await page.waitForTimeout(200);check((await state(page)).pumps[index],`pump ${index+1} restored through rotary controls`);}
