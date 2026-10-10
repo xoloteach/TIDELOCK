@@ -37,6 +37,7 @@ jobs:
           server_pid=$!
           trap 'kill "$server_pid"' EXIT
           node scripts/godot/smoke.cjs
+          node scripts/godot/touch-regression.cjs
           python3 scripts/godot/migration-server.py > /tmp/tidelock-migration-server.log 2>&1 &
           migration_pid=$!
           trap 'kill "$server_pid" "$migration_pid" || true' EXIT

@@ -8,7 +8,7 @@ var audio: Soundscape
 var started := false
 var settings_return := "title"
 var joystick_id := -1
-var joystick_mouse := false
+var touch_device := false
 var look_touch_id := -1
 var look_touch_position := Vector2.ZERO
 var bridge_timer := 0.0
@@ -27,7 +27,10 @@ func _ready() -> void:
 	ui.touch = DisplayServer.is_touchscreen_available()
 	if OS.has_feature("web"):
 		ui.touch = ui.touch or bool(JavaScriptBridge.eval("matchMedia('(pointer: coarse)').matches || new URLSearchParams(location.search).has('touch')"))
+	touch_device = ui.touch
 	canvas.add_child(ui)
+	ui.mode_changed.connect(reset_touch)
+	get_viewport().size_changed.connect(reset_touch)
 	ui.command.connect(action)
 	audio = Soundscape.new()
 	add_child(audio)
@@ -86,10 +89,9 @@ func _process(delta: float) -> void:
 	if ui == null:
 		return
 	view.moving = view.moving and ui.mode == "playing"
-	if not ui.touch:
-		var wanted := Input.MOUSE_MODE_CAPTURED if ui.mode == "playing" else Input.MOUSE_MODE_VISIBLE
-		if Input.mouse_mode != wanted:
-			Input.mouse_mode = wanted
+	var wanted := Input.MOUSE_MODE_CAPTURED if ui.mode == "playing" and not ui.touch else Input.MOUSE_MODE_VISIBLE
+	if Input.mouse_mode != wanted:
+		Input.mouse_mode = wanted
 	view.menu = not started or ui.mode == "title"
 	view.reduced_motion = ui.reduced_motion
 	ui.hit_flash = view.damage_flash
@@ -99,6 +101,10 @@ func _process(delta: float) -> void:
 		publish_state()
 
 func _input(event: InputEvent) -> void:
+	if ui != null and event is InputEventScreenTouch and event.pressed and not ui.touch:
+		touch_device = true
+		ui.touch = true
+		ui.show_mode(ui.mode)
 	if ui != null and (event.is_action_pressed("journal") or event.is_action_pressed("pause_game")):
 		_unhandled_input(event)
 		get_viewport().set_input_as_handled()
@@ -109,40 +115,54 @@ func _input(event: InputEvent) -> void:
 		return
 	if ui == null or ui.mode != "playing" or not ui.touch:
 		return
-	var center := Vector2(124, 586)
 	if event is InputEventScreenTouch:
-		if event.pressed and event.position.distance_to(center) < 115 and joystick_id < 0:
+		if not event.pressed:
+			if event.index == joystick_id:
+				joystick_id = -1
+				ui.joystick = Vector2.ZERO
+				ui.stick_origin = Vector2(124,586)
+				get_viewport().set_input_as_handled()
+			if event.index == look_touch_id:
+				look_touch_id = -1
+			return
+		if ui.touch_button_at(event.position):
+			return
+		if event.position.x < 460 and event.position.y > 300 and event.position.y < 720 and joystick_id < 0:
 			joystick_id = event.index
-			ui.joystick = ((event.position - center) / 62).limit_length()
+			if event.position.distance_to(ui.stick_origin) > 115:
+				ui.stick_origin = event.position.clamp(Vector2(85,380),Vector2(420,620))
+			update_stick(event.position)
 			get_viewport().set_input_as_handled()
-		elif event.pressed and event.position.x > 300 and event.position.y > 250 and event.position.y < 470 and look_touch_id < 0:
+		elif event.position.x >= 460 and event.position.y > 150 and look_touch_id < 0:
 			look_touch_id = event.index
 			look_touch_position = event.position
 			get_viewport().set_input_as_handled()
-		elif not event.pressed and event.index == look_touch_id:
-			look_touch_id = -1
-		elif not event.pressed and event.index == joystick_id:
-			joystick_id = -1
-			ui.joystick = Vector2.ZERO
+	elif event is InputEventScreenDrag:
+		if event.index == look_touch_id:
+			view.look((event.position - look_touch_position).limit_length(120) * 1.8)
+			look_touch_position = event.position
 			get_viewport().set_input_as_handled()
-	elif event is InputEventScreenDrag and event.index == look_touch_id:
-		view.look((event.position - look_touch_position).limit_length(120) * 1.8)
-		look_touch_position = event.position
-		get_viewport().set_input_as_handled()
-	elif event is InputEventScreenDrag and event.index == joystick_id:
-		ui.joystick = ((event.position - center) / 62).limit_length()
-		get_viewport().set_input_as_handled()
-	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
-		if event.pressed and event.position.distance_to(center) < 115:
-			joystick_mouse = true
-			ui.joystick = ((event.position - center) / 62).limit_length()
+		elif event.index == joystick_id:
+			update_stick(event.position)
 			get_viewport().set_input_as_handled()
-		elif not event.pressed and joystick_mouse:
-			joystick_mouse = false
-			ui.joystick = Vector2.ZERO
-	elif event is InputEventMouseMotion and joystick_mouse:
-		ui.joystick = ((event.position - center) / 62).limit_length()
-		get_viewport().set_input_as_handled()
+
+func update_stick(point: Vector2) -> void:
+	var offset := (point - ui.stick_origin) / 62.0
+	ui.joystick = Vector2.ZERO if offset.length() < 0.10 else offset.limit_length()
+
+func reset_touch() -> void:
+	joystick_id = -1
+	look_touch_id = -1
+	if ui != null:
+		ui.joystick = Vector2.ZERO
+		ui.stick_origin = Vector2(124,586)
+		ui.sprint_held = false
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT and is_instance_valid(ui):
+		reset_touch()
+		if ui.mode == "playing":
+			action("pause")
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.echo:
@@ -214,7 +234,6 @@ func action(command: String) -> void:
 		"resume":
 			joystick_id = -1
 			look_touch_id = -1
-			joystick_mouse = false
 			ui.show_mode("playing" if started else "title")
 		"save":
 			var saved := campaign.save_game()
@@ -351,7 +370,7 @@ func load_settings() -> void:
 		return
 	ui.sound_enabled = bool(data.get("sound", true))
 	ui.reduced_motion = bool(data.get("motion", false))
-	ui.touch = bool(data.get("touch", ui.touch))
+	ui.touch = touch_device or bool(data.get("touch", ui.touch))
 	campaign.assist = bool(data.get("assist", false))
 	audio.set_enabled(ui.sound_enabled)
 
@@ -359,7 +378,7 @@ func load_settings() -> void:
 func publish_state() -> void:
 	if not OS.has_feature("web"):
 		return
-	var data := {"renderer": "first-person-3d", "fps": Engine.get_frames_per_second(), "adapter": RenderingServer.get_video_adapter_name(), "yaw": view.yaw, "pitch": view.pitch, "flashlight": view.flashlight_enabled, "mode": ui.mode, "has_save": ui.has_save, "position": [campaign.position.x, campaign.position.y], "health": campaign.health, "stamina": campaign.stamina, "pumps": campaign.pumps, "fuses": campaign.fuse_count, "collected": campaign.collected, "logs": campaign.logs, "won": campaign.won, "assist": campaign.assist, "touch": ui.touch, "sound": ui.sound_enabled, "motion": ui.reduced_motion, "dials": ui.dials, "puzzle": ui.puzzle_index, "ending": ui.ending, "time": campaign.time_left, "rescues": campaign.rescues, "notice": ui.notice}
+	var data := {"renderer": "first-person-3d", "fps": Engine.get_frames_per_second(), "adapter": RenderingServer.get_video_adapter_name(), "yaw": view.yaw, "pitch": view.pitch, "flashlight": view.flashlight_enabled, "mode": ui.mode, "has_save": ui.has_save, "position": [campaign.position.x, campaign.position.y], "health": campaign.health, "stamina": campaign.stamina, "pumps": campaign.pumps, "fuses": campaign.fuse_count, "collected": campaign.collected, "logs": campaign.logs, "won": campaign.won, "assist": campaign.assist, "touch": ui.touch, "stick": [ui.joystick.x,ui.joystick.y], "move_touch": joystick_id, "look_touch": look_touch_id, "sound": ui.sound_enabled, "motion": ui.reduced_motion, "dials": ui.dials, "puzzle": ui.puzzle_index, "ending": ui.ending, "time": campaign.time_left, "rescues": campaign.rescues, "notice": ui.notice}
 	var world := {"bounds": [140, 160, 2020, 1220], "canal": [1390, 630, 770, 140], "bridges": [], "obstacles": [], "pumps": [], "fuses": [], "logs": [], "exit": [HarborData.EXIT.x, HarborData.EXIT.y]}
 	for box in HarborData.BUILDINGS:
 		world.obstacles.append([box.position.x, box.position.y, box.size.x, box.size.y])

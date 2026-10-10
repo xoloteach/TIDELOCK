@@ -21,11 +21,13 @@ playthrough pass. Check the Actions run for the version currently deployed.
 
 Requires a browser with WebGL 2 and WebAssembly. Web export uses a single thread,
 so Pages does not need special cross-origin isolation headers. Phone landscape
-is recommended; touch controls can also be enabled in Field Settings.
+is recommended. Touchscreen controls enable automatically; Field Settings also
+lets desktop players try them. Drag the right side to turn the camera, including
+the lower area beside the buttons. Keep your left thumb down to move while looking.
 
 | Action | Keyboard | Touch |
 | --- | --- | --- |
-| Look | Mouse | Swipe centre/right of screen |
+| Look | Mouse | Drag the right side (away from buttons) |
 | Move | WASD or arrows | Left stick |
 | Flashlight | F | LIGHT |
 | Hop | Space | — |
@@ -88,7 +90,13 @@ and `GAME_TEST_OUTPUT` selects the screenshot/results directory.
 Browser checks use the actual game controls to collect supplies, turn valves,
 restore all pumps, recover all three logs, reach the ending, reload checkpoints,
 and exercise mouse look, flashlight, simultaneous touch movement/aiming/pulse,
-and a touch-only repair.
+and a touch-only repair. `node scripts/godot/touch-regression.cjs` also checks
+left/right camera swipes, floating movement controls, independent finger release,
+stale touch preferences, and screen rotation at two phone sizes.
+
+The quay uses wet concrete, weathered warehouse materials, soft contact shadows,
+overcast lighting, and directional water ripples. These effects reuse the credited
+CC0 textures; the web build keeps dynamic shadows disabled for mobile performance.
 The diagnostic `window.tidelockState` is read-only observation; it cannot alter
 campaign state. Screenshots and results are written to `test-results/godot/`.
 

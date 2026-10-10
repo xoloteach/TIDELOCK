@@ -2,6 +2,7 @@ class_name HarborInterface
 extends Control
 
 signal command(action: String)
+signal mode_changed
 var campaign: Campaign
 var mode := "title"
 var buttons: Array[Button] = []
@@ -15,6 +16,7 @@ var log_text := ""
 var ending := ""
 var touch := false
 var joystick := Vector2.ZERO
+var stick_origin := Vector2(124,586)
 var sprint_held := false
 var sound_enabled := true
 var reduced_motion := false
@@ -51,6 +53,7 @@ func show_mode(value: String) -> void:
 	buttons.clear()
 	sprint_held = false
 	joystick = Vector2.ZERO
+	mode_changed.emit()
 	match mode:
 		"title":
 			button("BEGIN RECOVERY   →", Rect2(86, 384, 350, 56), "new")
@@ -104,6 +107,12 @@ func show_mode(value: String) -> void:
 	if mode != "playing" and not buttons.is_empty() and not touch:
 		buttons[0].grab_focus()
 	queue_redraw()
+
+func touch_button_at(point: Vector2) -> bool:
+	for b in buttons:
+		if b.get_rect().grow(10).has_point(point):
+			return true
+	return false
 
 func button(text: String, box: Rect2, action: String) -> Button:
 	var b := Button.new()
@@ -251,10 +260,13 @@ func hud() -> void:
 		text(Vector2(47, 683), "MOUSE LOOK   WASD MOVE   E USE   Q PULSE   F LIGHT   TAB MAP   ESC PAUSE", 12, MUTED)
 		text(Vector2(1040, 680), "PULSE  " + ("READY" if campaign.pulse_cooldown <= 0 else "%ds" % ceili(campaign.pulse_cooldown)), 14, MINT)
 	else:
-		draw_circle(Vector2(124, 586), 78, Color(INK, 0.7))
-		draw_arc(Vector2(124, 586), 77, 0, TAU, 40, Color(MUTED, 0.4), 2)
-		draw_circle(Vector2(124, 586) + joystick * 52, 29, Color(MINT, 0.65))
-		text(Vector2(124, 693), "MOVE  /  SWIPE RIGHT TO LOOK", 13, MUTED, true)
+		draw_circle(stick_origin, 78, Color(INK, 0.7))
+		draw_arc(stick_origin, 77, 0, TAU, 40, Color(MUTED, 0.4), 2)
+		draw_circle(stick_origin + joystick * 52, 29, Color(MINT, 0.65))
+		text(Vector2(124, 693), "MOVE", 15, MUTED, true)
+		text(stick_origin + Vector2(-61,7), "‹", 26, PAPER,true)
+		text(stick_origin + Vector2(61,7), "›", 26, PAPER,true)
+		text(Vector2(820,693), "DRAG RIGHT SIDE TO LOOK", 15, MUTED,true)
 	var near := campaign.nearest()
 	if not near.kind.is_empty():
 		var hint: String = {"fuse": "RECOVER CERAMIC FUSE", "pump": "OPEN MANUAL PUMP PANEL", "log": "READ SHIFT LOG", "exit": "REACH EVACUATION BEACON"}[near.kind]

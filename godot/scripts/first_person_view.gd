@@ -79,7 +79,14 @@ func model(path: String, size: Vector3, at: Vector3, parent: Node3D = self) -> N
 			for surface in range(mesh.mesh.get_surface_count()):
 				var mat: Material = mesh.get_active_material(surface)
 				if mat is StandardMaterial3D:
-					mat.shading_mode = BaseMaterial3D.SHADING_MODE_PER_VERTEX
+					if path.begins_with("industrial/building"):
+						var weathered := ShaderMaterial.new()
+						weathered.shader = preload("res://shaders/weathered_metal.gdshader")
+						weathered.set_shader_parameter("palette",mat.albedo_texture)
+						weathered.set_shader_parameter("weathering",preload("res://assets/concrete/Color.jpg"))
+						mesh.set_surface_override_material(surface,weathered)
+					else:
+						mat.shading_mode = BaseMaterial3D.SHADING_MODE_PER_VERTEX
 	holder.position = at
 	return holder
 
@@ -109,35 +116,31 @@ func _ready() -> void:
 	var settings := Environment.new()
 	settings.background_mode = Environment.BG_SKY
 	var sky := Sky.new()
-	var sky_mat := ProceduralSkyMaterial.new()
-	sky_mat.sky_top_color = Color("192c43")
-	sky_mat.sky_horizon_color = Color("607e88")
-	sky_mat.ground_bottom_color = Color("17252c")
-	sky_mat.ground_horizon_color = Color("607e88")
+	var sky_mat := ShaderMaterial.new()
+	sky_mat.shader = preload("res://shaders/storm_sky.gdshader")
 	sky.sky_material = sky_mat
 	settings.sky = sky
 	settings.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	settings.ambient_light_color = Color("9ab9c5")
-	settings.ambient_light_energy = 0.65
+	settings.ambient_light_energy = 0.60
 	settings.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	settings.fog_enabled = true
-	settings.fog_light_color = Color("506975")
-	settings.fog_density = 0.016
+	settings.fog_light_color = Color("58676d")
+	settings.fog_density = 0.010
 	env.environment = settings
 	add_child(env)
 	var sun := DirectionalLight3D.new()
-	sun.light_color = Color("bed5e0")
-	sun.light_energy = 1.15
+	sun.light_color = Color("ded9c6")
+	sun.light_energy = 0.95
 	sun.rotation_degrees = Vector3(-42, -32, 0)
 	sun.shadow_enabled = not software and not OS.has_feature("web")
 	sun.directional_shadow_max_distance = 55
 	add_child(sun)
-	var concrete := material(Color("929d97"))
-	concrete.albedo_texture = preload("res://assets/concrete/Color.jpg")
-	concrete.normal_enabled = true
-	concrete.normal_texture = preload("res://assets/concrete/NormalGL.jpg")
-	concrete.roughness_texture = preload("res://assets/concrete/Roughness.jpg")
-	concrete.uv1_scale = Vector3(18, 12, 1)
+	var concrete := ShaderMaterial.new()
+	concrete.shader = preload("res://shaders/wet_quay.gdshader")
+	concrete.set_shader_parameter("concrete_color",preload("res://assets/concrete/Color.jpg"))
+	concrete.set_shader_parameter("concrete_normal",preload("res://assets/concrete/NormalGL.jpg"))
+	concrete.set_shader_parameter("concrete_roughness",preload("res://assets/concrete/Roughness.jpg"))
 	amber_material = material(Color("dda94c"),1)
 	green_material = material(Color("77dbc1"),1)
 	var steel := material(Color("344c55"))
@@ -153,6 +156,8 @@ func _ready() -> void:
 				box(self,Vector3(0.06,0.9,0.06),world(r.get_center(),0.45)+Vector3(side*1.01,0,offset),steel)
 	var ocean := PlaneMesh.new()
 	ocean.size = Vector2(130,110)
+	ocean.subdivide_width = 48
+	ocean.subdivide_depth = 40
 	var sea := MeshInstance3D.new()
 	sea.mesh = ocean
 	sea.position = Vector3(25,-0.42,18)
@@ -164,10 +169,27 @@ func _ready() -> void:
 	var names := ["building-a","building-c","building-f","building-i","building-l","building-o","building-r","building-t"]
 	for i in range(HarborData.BUILDINGS.size()):
 		var r: Rect2 = HarborData.BUILDINGS[i]
+		var shadow := MeshInstance3D.new()
+		var shadow_plane := PlaneMesh.new()
+		shadow_plane.size = r.size/SCALE+Vector2(1.3,1.3)
+		shadow.mesh = shadow_plane
+		var shadow_mat := ShaderMaterial.new()
+		shadow_mat.shader = preload("res://shaders/contact_shadow.gdshader")
+		shadow.material_override = shadow_mat
+		shadow.position = world(r.get_center(),0.006)
+		add_child(shadow)
 		box(self,Vector3(r.size.x/SCALE,0.08,r.size.y/SCALE),world(r.get_center(),0.04),steel)
-		model("industrial/"+names[i],Vector3(r.size.x/SCALE,3.4 if i<3 else 2.4,r.size.y/SCALE),world(r.get_center()))
+		model("industrial/"+names[i],Vector3(r.size.x/SCALE,4.3 if i<3 else 3.0,r.size.y/SCALE),world(r.get_center()))
 		if i<3:
-			label(self,["MORROW QUAY / DEPOT","BOROUGH POWER","NORTH WEIR WORKS"][i],world(r.get_center(),4.3),Color("d8dfcd"),32)
+			label(self,["MORROW QUAY / DEPOT","BOROUGH POWER","NORTH WEIR WORKS"][i],world(r.get_center(),5.0),Color("d8dfcd"),32)
+	# Worn loading-lane paint and flush drains give the paved dock a human scale.
+	var paint := material(Color("a59b72"))
+	for x in range(270,1970,100):
+		box(self,Vector3(1.0,0.005,0.065),world(Vector2(x,1270),0.005),paint)
+	for p in [Vector2(490,1130),Vector2(760,900),Vector2(1330,590),Vector2(1860,1250)]:
+		box(self,Vector3(0.65,0.006,0.4),world(p,0.007),material(Color("14252b")))
+		for slot in range(6):
+			box(self,Vector3(0.025,0.01,0.38),world(p,0.012)+Vector3(-0.27+slot*0.105,0,0),steel)
 	# Quay edge walls match the world bounds and make inaccessible ocean readable.
 	for r in [Rect2(140,160,2020,10),Rect2(140,1370,2020,10),Rect2(140,160,10,1220),Rect2(2150,160,10,1220)]:
 		box(self,Vector3(r.size.x/SCALE,0.6,r.size.y/SCALE),world(r.get_center(),0.3),steel)
@@ -272,8 +294,8 @@ func _ready() -> void:
 	rain.initial_velocity_max=16
 	rain.gravity=Vector3(0,-1,0)
 	var drop := BoxMesh.new()
-	drop.size=Vector3(0.008,0.28,0.008)
-	drop.material=material(Color("9db9c5"))
+	drop.size=Vector3(0.004,0.18,0.004)
+	drop.material=material(Color("7e969f"))
 	rain.mesh=drop
 	add_child(rain)
 	sparks = CPUParticles3D.new()
