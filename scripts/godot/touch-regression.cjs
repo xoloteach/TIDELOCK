@@ -23,20 +23,21 @@ const state=p=>p.evaluate(()=>window.tidelockState);
   const b=await page.locator('canvas').boundingBox();
   async function point(x,y,id){const scale=Math.min(b.width/1280,b.height/720);return{x:b.x+(b.width-1280*scale)/2+x*scale,y:b.y+(b.height-720*scale)/2+y*scale,id};}
   async function touches(type,points){await cdp.send('Input.dispatchTouchEvent',{type,touchPoints:await Promise.all(points.map(([x,y,id])=>point(x,y,id)))});}
+  async function released(){await page.waitForFunction(()=>window.tidelockState.move_touch===-1&&window.tidelockState.look_touch===-1&&Math.hypot(...window.tidelockState.stick)<0.01,null,{timeout:10000});}
   async function tap(x,y){const p=await point(x,y,1);await page.touchscreen.tap(p.x,p.y);}
   await tap(240,410);await page.waitForFunction(()=>window.tidelockState?.mode==='playing');
   await page.screenshot({path:`${output}/start-${viewport.width}.png`});
   for(const [label,dx,dy] of [['right',1,0],['left',-1,0],['backward',0,1],['forward',0,-1]]){
    const before=(await state(page)).position;
    await touches('touchStart',[[124,586,1]]);await touches('touchMove',[[124+dx*62,586+dy*62,1]]);await page.waitForTimeout(450);
-   await touches('touchEnd',[]);await page.waitForTimeout(250);
+   await touches('touchEnd',[]);await released();
    const after=await state(page),travel=(after.position[0]-before[0])*dx+(after.position[1]-before[1])*dy;
    check(travel>25,`${viewport.width}: drag moves ${label}`);
    check(Math.hypot(...after.stick)<0.01,`${viewport.width}: ${label} release stops stick`);
   }
   // A thumb placed outside the old fixed circle creates a usable floating stick.
   let before=await state(page);
-  await touches('touchStart',[[340,560,1]]);await touches('touchMove',[[402,560,1]]);await page.waitForTimeout(350);await touches('touchEnd',[]);await page.waitForTimeout(250);
+  await touches('touchStart',[[340,560,1]]);await touches('touchMove',[[402,560,1]]);await page.waitForTimeout(350);await touches('touchEnd',[]);await released();
   check((await state(page)).position[0]>before.position[0]+20,`${viewport.width}: floating stick works away from old circle`);
   // Lower right used to be a dead area. Rotate both ways, release look first, keep moving.
   before=await state(page);
@@ -46,18 +47,18 @@ const state=p=>p.evaluate(()=>window.tidelockState);
   await touches('touchMove',[[186,586,1],[700,565,2]]);await page.waitForFunction(y=>window.tidelockState.yaw>y+0.1,before.yaw);
   check((await state(page)).yaw>before.yaw+0.1,`${viewport.width}: swipe turns left`);
   await touches('touchMove',[[186,586,1],[760,565,2]]);await page.waitForTimeout(250);
-  await touches('touchEnd',[[760,565,2]]);await page.waitForTimeout(180);
+  await touches('touchEnd',[[760,565,2]]);await page.waitForFunction(()=>window.tidelockState.look_touch===-1&&window.tidelockState.move_touch>=0,null,{timeout:10000});
   const held=await state(page);await page.waitForTimeout(350);const continuing=await state(page);
   check(held.move_touch>=0&&continuing.position[0]>held.position[0]+20,`${viewport.width}: releasing look thumb does not cancel movement`);
-  await touches('touchEnd',[]);await page.waitForTimeout(200);
+  await touches('touchEnd',[]);await released();
   check((await state(page)).move_touch===-1&&(await state(page)).look_touch===-1,`${viewport.width}: both finger owners released`);
   // Releasing movement first must leave the camera controllable.
-  await touches('touchStart',[[124,586,1],[780,310,2]]);await touches('touchEnd',[[124,586,1]]);
+  await touches('touchStart',[[124,586,1],[780,310,2]]);await touches('touchEnd',[[124,586,1]]);await page.waitForFunction(()=>window.tidelockState.move_touch===-1&&window.tidelockState.look_touch>=0,null,{timeout:10000});
   before=await state(page);await touches('touchMove',[[840,310,2]]);await page.waitForFunction(y=>window.tidelockState.yaw<y-0.1,before.yaw);
   check((await state(page)).yaw<before.yaw-0.1,`${viewport.width}: look survives movement-thumb release`);
-  await touches('touchEnd',[]);
+  await touches('touchEnd',[]);await released();
   await page.screenshot({path:`${output}/touch-${viewport.width}.png`});
-  await touches('touchStart',[[186,586,1]]);await page.setViewportSize({width:412,height:915});await page.waitForTimeout(300);await touches('touchEnd',[]);await page.setViewportSize(viewport);await page.waitForTimeout(400);
+  await touches('touchStart',[[186,586,1]]);await page.setViewportSize({width:412,height:915});await page.waitForTimeout(300);await touches('touchEnd',[]);await page.setViewportSize(viewport);await released();
   check((await state(page)).move_touch===-1&&Math.hypot(...(await state(page)).stick)<0.01,`${viewport.width}: screen rotation cancels held movement`);
   await context.close();
  }
