@@ -33,9 +33,27 @@ var save_error := ""
 var save_path := SAVE_PATH
 var talked := [false, false, false]
 var flags: Array[String] = []
+var notes_read: Array = []
 
 func _init() -> void:
 	reset_drones()
+	notes_read.resize(Lore.NOTES.size())
+	notes_read.fill(false)
+
+# Fire a story radio event once per mission; the flag is saved with the checkpoint.
+func once(key: String) -> void:
+	if Lore.RADIO_EVENTS.has(key) and not ("r_" + key) in flags:
+		flags.append("r_" + key)
+		radio.emit(key)
+
+func read_log(index: int) -> void:
+	logs[index] = true
+	once("log_%d" % (index + 1))
+	save_game()
+
+func read_note(index: int) -> void:
+	notes_read[index] = true
+	save_game()
 
 func reset_drones() -> void:
 	drones.clear()
@@ -65,6 +83,15 @@ func update(delta: float, movement: Vector2, sprint: bool) -> void:
 		position = next
 	if not assist:
 		time_left -= delta * (1.0 - pumps.count(true) * 0.18)
+		if time_left < 120.0:
+			once("tide_2min")
+	for bridge in HarborData.BRIDGES:
+		if bridge.has_point(position):
+			once("bridge")
+	if HarborData.WEIR_YARD.has_point(position):
+		once("weir_yard")
+	if HarborData.CANAL.grow(80).has_point(position) and position.y > HarborData.CANAL.end.y:
+		once("canal")
 	if time_left <= 0:
 		rescue("The surge crossed the seawall. Sera pulled you back. Try another route.")
 		return
@@ -120,6 +147,8 @@ func nearest() -> Dictionary:
 			consider(best, "pump", i, HarborData.PUMPS[i])
 		if not logs[i]:
 			consider(best, "log", i, HarborData.LOGS[i])
+	for i in range(Lore.NOTES.size()):
+		consider(best, "note", i, Lore.NOTES[i][2])
 	if pumps.count(true) == 3:
 		consider(best, "exit", 0, HarborData.EXIT)
 	for i in range(HarborData.NPC_IDS.size()):
@@ -183,6 +212,7 @@ func rescue(text: String) -> void:
 	rescues += 1
 	reset_drones()
 	message.emit(text)
+	once("rescue")
 	save_game()
 
 func finish() -> void:
@@ -200,7 +230,7 @@ static func has_checkpoint() -> bool:
 	return FileAccess.file_exists(SAVE_PATH)
 
 func save_game() -> bool:
-	var payload := JSON.stringify({"version": 1, "yaw": look_yaw, "pitch": look_pitch, "position": [position.x, position.y], "checkpoint": [checkpoint.x, checkpoint.y], "health": health, "time": time_left, "pumps": pumps, "collected": collected, "logs": logs, "fuses": fuse_count, "rescues": rescues, "won": won, "assist": assist, "record": record_choice, "talked": talked, "flags": flags})
+	var payload := JSON.stringify({"version": 1, "yaw": look_yaw, "pitch": look_pitch, "position": [position.x, position.y], "checkpoint": [checkpoint.x, checkpoint.y], "health": health, "time": time_left, "pumps": pumps, "collected": collected, "logs": logs, "fuses": fuse_count, "rescues": rescues, "won": won, "assist": assist, "record": record_choice, "talked": talked, "flags": flags, "notes": notes_read})
 	var browser_saved := true
 	if OS.has_feature("web"):
 		browser_saved = bool(JavaScriptBridge.eval("try { localStorage.setItem('tidelock-harbor-v1', " + JSON.stringify(payload) + "); true; } catch (e) { console.warn('TIDELOCK checkpoint storage unavailable: ' + e.message); false; }", true))
@@ -255,6 +285,9 @@ func load_game() -> bool:
 	flags.clear()
 	for flag in data.get("flags", []):
 		flags.append(str(flag))
+	var saved_notes: Array = data.get("notes", [])
+	for i in range(notes_read.size()):
+		notes_read[i] = i < saved_notes.size() and saved_notes[i] == true
 	if HarborData.blocked(position, 15, pumps.count(true) == 3):
 		position = checkpoint
 	if HarborData.blocked(position, 15, pumps.count(true) == 3):
@@ -296,8 +329,10 @@ static func valid_save(data: Variant) -> bool:
 		for value in data.talked:
 			if not value is bool:
 				return false
+	if data.has("notes") and (not data.notes is Array or data.notes.size() > 64):
+		return false
 	if data.has("flags"):
-		if not data.flags is Array or data.flags.size() > 32:
+		if not data.flags is Array or data.flags.size() > 64:
 			return false
 		for value in data.flags:
 			if not value is String or value.length() > 32:

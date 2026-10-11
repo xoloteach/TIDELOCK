@@ -68,6 +68,8 @@ const PROPS := [
 	["lifebuoy", Vector2(1200, 1371), 180.0, 0.55, Vector2.ZERO],
 ]
 const NPC_RADIUS := 22.0
+# The fenced yard in front of North Weir Works, used for a radio cue.
+const WEIR_YARD := Rect2(1300, 160, 860, 450)
 
 static func solids() -> Array[Rect2]:
 	var result: Array[Rect2] = []

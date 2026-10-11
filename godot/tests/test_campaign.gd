@@ -145,6 +145,32 @@ func run() -> void:
 	expect(Campaign.valid_save(legacy), "saves from before the story update still load")
 	legacy["flags"] = [3]
 	expect(not Campaign.valid_save(legacy), "malformed story flags rejected")
+	# World-building content.
+	for key in ["bridge", "weir_yard", "canal", "log_1", "log_2", "log_3", "tide_2min", "rescue"]:
+		expect(Lore.RADIO_EVENTS.has(key), "radio event %s has lines" % key)
+		for entry in Lore.RADIO_EVENTS.get(key, []):
+			expect(Story.SPEAKERS.has(entry[0]), "radio speaker %s is known" % entry[0])
+	for id in Lore.BARKS:
+		for entry in Lore.BARKS[id]:
+			expect(Story.SPEAKERS.has(entry[0]), "bark speaker %s is known" % entry[0])
+	for note in Lore.NOTES:
+		var spot: Vector2 = note[2]
+		for point in all_points:
+			expect(spot.distance_to(point) > 100.0, "notice %s keeps clear of objectives" % note[0])
+		var reachable := false
+		for angle in range(0, 360, 15):
+			var stand: Vector2 = spot + Vector2.from_angle(deg_to_rad(angle)) * 60.0
+			if not HarborData.blocked(stand, 15, true):
+				reachable = true
+		expect(reachable, "notice %s can be reached on foot" % note[0])
+	var reader := Campaign.new()
+	reader.save_path = game.save_path
+	reader.read_note(0)
+	reader.read_log(0)
+	expect("r_log_1" in reader.flags, "reading a log fires its radio event once")
+	var rereader := Campaign.new()
+	rereader.save_path = game.save_path
+	expect(rereader.load_game() and rereader.notes_read[0], "read notices survive checkpoint")
 	DirAccess.remove_absolute(game.save_path)
 	print("Campaign checks: %d passed / %d total" % [checks - failures, checks])
 	quit(1 if failures > 0 else 0)

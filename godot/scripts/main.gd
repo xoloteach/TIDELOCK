@@ -18,6 +18,8 @@ var talk_lines: Array = []
 var talk_index := 0
 var talk_reply := false
 var talk_flag := ""
+var bark_clock := 0.0
+var bark_count := {}
 
 func _ready() -> void:
 	configure_input()
@@ -75,7 +77,7 @@ func connect_campaign() -> void:
 		audio.cue("damage")
 	)
 	campaign.radio.connect(func(key: String):
-		ui.radio({"spotted": Story.RADIO_SPOTTED, "first_pump": Story.RADIO_FIRST_PUMP, "gate": Story.RADIO_GATE}.get(key, []))
+		ui.radio({"spotted": Story.RADIO_SPOTTED, "first_pump": Story.RADIO_FIRST_PUMP, "gate": Story.RADIO_GATE}.get(key, Lore.RADIO_EVENTS.get(key, [])))
 		if key == "gate":
 			audio.cue("gate")
 	)
@@ -97,7 +99,12 @@ func _physics_process(delta: float) -> void:
 		movement = right * movement.x + forward * -movement.y
 		campaign.look_yaw = view.yaw
 		campaign.look_pitch = view.pitch
-		campaign.update(delta, movement, Input.is_action_pressed("sprint") or ui.sprint_held)
+		var running := Input.is_action_pressed("sprint") or ui.sprint_held
+		campaign.update(delta, movement, running)
+		view.physics_step(campaign.position, delta, running)
+	elif view != null and campaign != null:
+		# Menus and conversations: hold the camera still.
+		view.physics_step(campaign.position, delta, false)
 
 func _process(delta: float) -> void:
 	if ui == null:
@@ -110,6 +117,7 @@ func _process(delta: float) -> void:
 	view.reduced_motion = ui.reduced_motion
 	view.sound_enabled = ui.sound_enabled
 	ui.hit_flash = view.damage_flash
+	bark(delta)
 	bridge_timer += delta
 	if bridge_timer > 0.15:
 		bridge_timer = 0
@@ -359,16 +367,46 @@ func interact() -> void:
 			ui.puzzle_error = ""
 			ui.show_mode("puzzle")
 		"log":
-			campaign.logs[index] = true
-			campaign.save_game()
+			campaign.read_log(index)
+			ui.log_title = "RECOVERED SHIFT LOG"
 			ui.log_text = HarborData.LOG_TEXT[index]
 			ui.show_mode("log")
+		"note":
+			campaign.read_note(index)
+			ui.log_title = Lore.NOTES[index][0]
+			ui.log_text = Lore.NOTES[index][1]
+			ui.show_mode("log")
+			audio.cue("click")
 		"exit":
 			campaign.finish()
 		"npc":
 			start_conversation(index)
 		_:
 			ui.inform("Move closer to a fuse box, pump panel or shift log. [Tab] opens the recovery map.")
+
+# People the player has met say a short line when passed; evacuees once the gate opens.
+func bark(delta: float) -> void:
+	bark_clock -= delta
+	if ui.mode != "playing" or bark_clock > 0.0 or not ui.radio_line.is_empty():
+		return
+	bark_clock = 1.0
+	var speakers := []
+	for i in range(HarborData.NPC_IDS.size()):
+		if campaign.talked[i]:
+			speakers.append([HarborData.NPC_IDS[i], HarborData.NPC_POSITIONS[i]])
+	if campaign.pumps.count(true) == 3:
+		for entry in HarborData.EVACUEES:
+			speakers.append([entry[0], entry[1]])
+	for speaker in speakers:
+		var lines: Array = Lore.BARKS.get(speaker[0], [])
+		var said: int = bark_count.get(speaker[0], 0)
+		if lines.is_empty() or said >= lines.size() or campaign.position.distance_to(speaker[1]) > 170.0:
+			continue
+		bark_count[speaker[0]] = said + 1
+		var entry: Array = lines[said]
+		ui.radio([[entry[0], entry[1], "near"]])
+		bark_clock = 14.0
+		return
 
 func on_bridge() -> bool:
 	for bridge in HarborData.BRIDGES:

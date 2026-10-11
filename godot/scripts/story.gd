@@ -9,6 +9,10 @@ const SPEAKERS := {
 	"sera": ["SERA HOLT", Color("f0a35a")],
 	"ivo": ["IVO", Color("8fd3c4")],
 	"dax": ["DAX REN", Color("d8c27a")],
+	"control": ["HARBOUR CONTROL", Color("9fb4c8")],
+	"barge": ["BARGE CREW", Color("b8a98f")],
+	"evacuee_a": ["ODILE MARSH", Color("e08a7a")],
+	"evacuee_b": ["TOMAS QUILL", Color("e6cf6e")],
 }
 
 const RADIO_INTRO := [
@@ -81,7 +85,7 @@ const REPEAT := {
 }
 
 static func speaker_name(id: String) -> String:
-	return SPEAKERS.get(id, [id.to_upper(), Color.WHITE])[0]
+	return SPEAKERS.get(id, [id.replace("_", " ").to_upper(), Color.WHITE])[0]
 
 static func speaker_color(id: String) -> Color:
 	return SPEAKERS.get(id, ["", Color.WHITE])[1]

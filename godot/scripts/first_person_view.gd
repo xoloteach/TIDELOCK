@@ -49,6 +49,19 @@ var waves: Array[Dictionary] = []
 var splashes: CPUParticles3D
 # Software WebGL (and ?quality=low) draws less: shorter view ranges, no cosmetic particles.
 var low_quality := false
+# First-person feel: positions are interpolated between physics steps, and the
+# bob, footsteps, sway, lean and FOV all follow the distance actually walked.
+var body_prev := Vector2.ZERO
+var body_now := Vector2.ZERO
+var body_speed := 0.0
+var sprinting := false
+var stride := 0.0
+var last_step := 0
+var landing := 0.0
+var lean := 0.0
+var shake := 0.0
+var sway := Vector2.ZERO
+var tool_rest := Vector3(0.32, -0.35, -0.67)
 signal footstep
 signal thunder(strength: float)
 
@@ -301,6 +314,7 @@ func _ready() -> void:
 		lamp.omni_range=5
 		add_child(lamp)
 	quay_details()
+	notices()
 	people()
 	pump_effects()
 	weather_effects()
@@ -374,6 +388,17 @@ func burst(at: Vector2, repair: bool = false) -> void:
 func look(relative: Vector2) -> void:
 	yaw -= relative.x * 0.0025
 	pitch = clampf(pitch-relative.y*0.0025,-1.25,1.25)
+	# The held tool trails the view slightly.
+	sway = (sway + relative * 0.00035).limit_length(0.05)
+
+# Called once per physics step with the simulated position.
+func physics_step(position_now: Vector2, delta: float, running: bool) -> void:
+	body_prev = body_now
+	body_now = position_now
+	if body_prev.distance_to(body_now) > 40.0:
+		body_prev = body_now
+	body_speed = body_prev.distance_to(body_now) / SCALE / delta
+	sprinting = running and body_speed > 4.0
 
 func jump() -> void:
 	if jump_height<=0:
@@ -389,21 +414,45 @@ func _process(delta: float) -> void:
 		eyes.look_at(Vector3(23,0,13))
 		tool.visible=false
 	else:
+		var was_airborne := jump_height > 0.0
 		jump_speed-=delta*9.8
 		jump_height=maxf(0,jump_height+jump_speed*delta)
-		if jump_height<=0:jump_speed=0
-		var bob := sin(elapsed*10)*0.035 if moving and not reduced_motion else 0.0
-		eyes.position=world(campaign.position,1.65+jump_height+bob)
-		eyes.rotation=Vector3(pitch,yaw,0)
-		# Lower the hammer while talking so it never covers the speaker.
-		tool.visible=focus_npc < 0
-		tool.position.y=-0.35+bob
-		if moving:
-			foot_clock+=delta
-			if foot_clock>0.42:
-				foot_clock=0
+		if jump_height<=0:
+			jump_speed=0
+			if was_airborne:
+				landing = 0.07
+		var motion := 0.0 if reduced_motion else 1.0
+		var place := body_prev.lerp(body_now, Engine.get_physics_interpolation_fraction())
+		if body_now == Vector2.ZERO:
+			place = campaign.position
+		# One step every 0.72 m walked; the dip lands on each footfall.
+		var pace := clampf(body_speed / 3.5, 0.0, 1.6)
+		stride += body_speed * delta / 0.72 if jump_height <= 0.0 else 0.0
+		var phase := stride * PI
+		if int(stride) != last_step:
+			last_step = int(stride)
+			if pace > 0.2:
 				footstep.emit()
-		else:foot_clock=0.3
+		var bob := -absf(sin(phase)) * 0.045 * pace * motion
+		var side := cos(phase) * 0.022 * pace * motion
+		landing = maxf(0.0, landing - delta * 0.35)
+		shake = maxf(0.0, shake - delta)
+		var jolt := Vector3(randf_range(-1, 1), randf_range(-1, 1), 0) * shake * 0.06 * motion
+		var right := Vector3(cos(yaw), 0, -sin(yaw))
+		eyes.position = world(place, 1.65 + jump_height + bob - landing * motion) + right * side + jolt
+		# Lean into strafes, widen the view a little at a run.
+		var strafe := 0.0
+		if body_speed > 0.2:
+			var velocity := (body_now - body_prev).normalized()
+			strafe = velocity.dot(Vector2(cos(yaw), -sin(yaw)))
+		lean = lerpf(lean, -strafe * 0.018 * pace * motion, 1.0 - exp(-delta * 6.0))
+		eyes.rotation = Vector3(pitch, yaw, lean)
+		eyes.fov = lerpf(eyes.fov, 78.0 + (5.0 if sprinting else 0.0) * motion, 1.0 - exp(-delta * 5.0))
+		tool.visible=focus_npc < 0
+		sway = sway.lerp(Vector2.ZERO, 1.0 - exp(-delta * 8.0))
+		var lowered := 0.07 if sprinting else 0.0
+		tool.position = tool_rest + Vector3(-sway.x + side * 0.6, sway.y + bob * 0.8 - lowered - landing * 0.6, 0) * maxf(motion, 0.0)
+		tool.rotation_degrees = Vector3(12 - lowered * 120, 0, -18 + side * 120 * motion)
 	torch.visible=flashlight_enabled and not menu
 	rain.position=eyes.position+Vector3(0,6,0)
 	rain.emitting=not reduced_motion
@@ -661,6 +710,7 @@ func speak(index: int, seconds: float) -> void:
 
 func alarm_cue() -> void:
 	damage_flash = maxf(damage_flash, 0.7)
+	shake = 0.35
 
 func update_world_effects(delta: float) -> void:
 	for node in sounds3d:
@@ -728,3 +778,63 @@ func update_world_effects(delta: float) -> void:
 		var want_pitch := atan2(to_head.y, Vector2(to_head.x, to_head.z).length())
 		yaw = lerp_angle(yaw, want_yaw, 1.0 - exp(-delta * 4.0))
 		pitch = lerpf(pitch, want_pitch, 1.0 - exp(-delta * 4.0))
+
+# Readable notices mounted on walls: paper, a whiteboard, graffiti, a front page.
+func notices() -> void:
+	for note in Lore.NOTES:
+		var kind: String = str(note[0]).get_slice(" /", 0)
+		var holder := Node3D.new()
+		add_child(holder)
+		holder.position = world(note[2], 1.45)
+		# Lore yaw is a compass bearing (0 = north); a quad faces +Z at yaw 0.
+		holder.rotation.y = deg_to_rad(180.0 - float(note[3]))
+		var sheet := QuadMesh.new()
+		var paper := material(Color("d9d4c0"))
+		match kind:
+			"WHITEBOARD":
+				sheet.size = Vector2(1.0, 0.65)
+				paper = material(Color("e8ece6"))
+			"GRAFFITI":
+				sheet.size = Vector2(0.01, 0.01)
+			"QUAY LEDGER":
+				sheet.size = Vector2(0.5, 0.68)
+				paper = material(Color("cfc8b0"))
+			"TAPED NOTICE", "NOTICE":
+				sheet.size = Vector2(0.42, 0.58)
+				paper = material(Color("e7d27a"))
+			_:
+				sheet.size = Vector2(0.38, 0.5)
+		paper.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
+		var face := MeshInstance3D.new()
+		face.mesh = sheet
+		face.material_override = paper
+		face.visibility_range_end = 30.0
+		holder.add_child(face)
+		# Faint ruled lines read as text from a few metres away.
+		if kind != "GRAFFITI":
+			for row in range(5):
+				var rule := MeshInstance3D.new()
+				var bar := QuadMesh.new()
+				bar.size = Vector2(sheet.size.x * (0.75 if row % 2 == 0 else 0.55), 0.012)
+				rule.mesh = bar
+				rule.material_override = material(Color("4a4f4c"))
+				rule.position = Vector3(-sheet.size.x * 0.05, sheet.size.y * 0.28 - row * sheet.size.y * 0.12, 0.002)
+				rule.visibility_range_end = 12.0
+				holder.add_child(rule)
+		var title := Label3D.new()
+		title.font = preload("res://fonts/FieldSans.ttf")
+		title.text = str(note[0]).get_slice("/ ", 1) if kind == "GRAFFITI" else kind
+		if kind == "GRAFFITI":
+			title.text = str(note[1]).get_slice("\n", 0)
+			title.modulate = Color("d8604a")
+			title.font_size = 64
+			title.pixel_size = 0.004
+			title.position = Vector3(0, 0.25, 0.01)
+		else:
+			title.modulate = Color("e4eada")
+			title.font_size = 28
+			title.pixel_size = 0.0045
+			title.outline_size = 4
+			title.position = Vector3(0, sheet.size.y * 0.5 + 0.08, 0.01)
+		title.visibility_range_end = 9.0
+		holder.add_child(title)
