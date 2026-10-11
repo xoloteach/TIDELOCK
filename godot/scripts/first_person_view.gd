@@ -61,7 +61,13 @@ var landing := 0.0
 var lean := 0.0
 var shake := 0.0
 var sway := Vector2.ZERO
-var tool_rest := Vector3(0.32, -0.35, -0.67)
+# First person shows Mara's own sleeves and torch hand; third person shows all of her.
+var tool_rest := Vector3(0.08, -1.47, -0.02)
+var arms_anim: AnimationPlayer
+var arms_idle := ""
+var player: Dictionary = {}
+var third_person := false
+var orbit := 2.4
 signal footstep
 signal thunder(strength: float)
 
@@ -161,19 +167,26 @@ func _ready() -> void:
 	settings.sky = sky
 	settings.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	settings.ambient_light_color = Color("9ab9c5")
-	settings.ambient_light_energy = 0.60
+	settings.ambient_light_energy = 0.55
 	settings.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	settings.fog_enabled = true
-	settings.fog_light_color = Color("58676d")
-	settings.fog_density = 0.010
+	settings.fog_light_color = Color("4e5f66")
+	# Let the photographed clouds and lightning show through the fog.
+	settings.fog_sky_affect = 0.4
+	settings.glow_enabled = not software
+	settings.glow_intensity = 0.6
+	settings.glow_bloom = 0.04
+	settings.fog_density = 0.012
 	env.environment = settings
 	environment = settings
 	add_child(env)
 	sun = DirectionalLight3D.new()
 	sun.light_color = Color("ded9c6")
-	sun.light_energy = 0.95
+	sun.light_energy = 0.85
 	sun.rotation_degrees = Vector3(-42, -32, 0)
-	sun.shadow_enabled = not software and not OS.has_feature("web")
+	# Real GPUs (including the web) get a directional shadow; software WebGL does not.
+	sun.shadow_enabled = not software
+	sun.shadow_blur = 1.5
 	sun.directional_shadow_max_distance = 55
 	add_child(sun)
 	var concrete := ShaderMaterial.new()
@@ -304,7 +317,7 @@ func _ready() -> void:
 	gate=box(self,Vector3(0.28,2.1,5.4),world(Vector2(2034,1225),1.05),yellow)
 	label(self,"EAST EVAC / RESTORE 3 PUMPS",world(HarborData.EXIT,3),Color("7cd6c6"),36)
 	box(self,Vector3(0.6,0.12,0.6),world(HarborData.EXIT,0.06),material(Color("79debc"),2))
-	for p in [Vector2(240,950),Vector2(610,810),Vector2(1300,570),Vector2(1700,820),Vector2(2110,1050)]:
+	for p in [Vector2(240,950),Vector2(610,810),Vector2(1300,604),Vector2(1700,820),Vector2(2110,1050)]:
 		box(self,Vector3(0.06,3.4,0.06),world(p,1.7),steel)
 		box(self,Vector3(0.4,0.1,0.25),world(p,3.4),material(Color("ffcb88"),2))
 		var lamp := OmniLight3D.new()
@@ -332,8 +345,7 @@ func _ready() -> void:
 	torch.spot_angle=34
 	torch.shadow_enabled=not software and not OS.has_feature("web")
 	eyes.add_child(torch)
-	tool=model("survival/tool-hammer",Vector3(0.18,0.34,0.08),Vector3(0.32,-0.35,-0.67),eyes)
-	tool.rotation_degrees=Vector3(12,0,-18)
+	first_person_arms()
 	var ring := TorusMesh.new()
 	ring.inner_radius=0.94
 	ring.outer_radius=1.0
@@ -413,6 +425,8 @@ func _process(delta: float) -> void:
 		eyes.position=Vector3(11+sin(elapsed*0.06)*3,7.0,29)
 		eyes.look_at(Vector3(23,0,13))
 		tool.visible=false
+		if not player.is_empty():
+			player.root.visible = false
 	else:
 		var was_airborne := jump_height > 0.0
 		jump_speed-=delta*9.8
@@ -448,11 +462,14 @@ func _process(delta: float) -> void:
 		lean = lerpf(lean, -strafe * 0.018 * pace * motion, 1.0 - exp(-delta * 6.0))
 		eyes.rotation = Vector3(pitch, yaw, lean)
 		eyes.fov = lerpf(eyes.fov, 78.0 + (5.0 if sprinting else 0.0) * motion, 1.0 - exp(-delta * 5.0))
-		tool.visible=focus_npc < 0
+		tool.visible = focus_npc < 0 and not third_person
 		sway = sway.lerp(Vector2.ZERO, 1.0 - exp(-delta * 8.0))
-		var lowered := 0.07 if sprinting else 0.0
-		tool.position = tool_rest + Vector3(-sway.x + side * 0.6, sway.y + bob * 0.8 - lowered - landing * 0.6, 0) * maxf(motion, 0.0)
-		tool.rotation_degrees = Vector3(12 - lowered * 120, 0, -18 + side * 120 * motion)
+		var lowered := 0.06 if sprinting else 0.0
+		tool.position = tool_rest + Vector3(-sway.x + side * 0.5, sway.y + bob * 0.6 - lowered - landing * 0.5, 0) * maxf(motion, 0.0)
+		tool.rotation_degrees = Vector3(-lowered * 60, 180, side * 60 * motion)
+		update_body(place, delta)
+		if third_person:
+			follow_camera(place, delta)
 	torch.visible=flashlight_enabled and not menu
 	rain.position=eyes.position+Vector3(0,6,0)
 	rain.emitting=not reduced_motion
@@ -530,7 +547,7 @@ func quay_details() -> void:
 	for item in HarborData.PROPS:
 		if item[0] == "security_light":
 			var lamp := OmniLight3D.new()
-			var facing := Vector3(0, 0, 0.6).rotated(Vector3.UP, deg_to_rad(item[2]))
+			var facing := Vector3(0, 0, -0.6).rotated(Vector3.UP, deg_to_rad(item[2]))
 			lamp.position = world(item[1], item[3] - 0.2) + facing
 			lamp.light_color = Color("e8f0ff")
 			lamp.light_energy = 1.6
@@ -733,8 +750,8 @@ func update_world_effects(delta: float) -> void:
 	if flicker > 0.0 or sky_flash > 0.0:
 		sky_flash = flicker
 		sky_material.set_shader_parameter("flash", flicker)
-		sun.light_energy = 0.95 + flicker * 2.2
-		environment.ambient_light_energy = 0.60 + flicker * 0.9
+		sun.light_energy = 0.85 + flicker * 2.2
+		environment.ambient_light_energy = 0.55 + flicker * 0.9
 	for wave in waves:
 		wave.timer -= delta
 		if wave.timer <= 0.0:
@@ -838,3 +855,114 @@ func notices() -> void:
 			title.position = Vector3(0, sheet.size.y * 0.5 + 0.08, 0.01)
 		title.visibility_range_end = 9.0
 		holder.add_child(title)
+
+func first_person_arms() -> void:
+	tool = Node3D.new()
+	eyes.add_child(tool)
+	var rig: Node3D = load("res://assets/characters/mara_arms.glb").instantiate()
+	tool.add_child(rig)
+	for mesh in rig.find_children("*", "MeshInstance3D", true, false):
+		mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		for surface in range(mesh.mesh.get_surface_count()):
+			var mat: Material = mesh.get_active_material(surface)
+			if mat is StandardMaterial3D and mat.resource_name.begins_with("Cloth"):
+				mat.vertex_color_use_as_albedo = true
+	arms_anim = rig.find_children("*", "AnimationPlayer", true, false)[0]
+	for name in arms_anim.get_animation_list():
+		arms_anim.get_animation(name).loop_mode = Animation.LOOP_LINEAR
+	arms_idle = clip_name(arms_anim, "Idle_Torch_Loop")
+	arms_anim.get_animation(clip_name(arms_anim, "Interact")).loop_mode = Animation.LOOP_NONE
+	arms_anim.play(arms_idle)
+	# A working torch in Mara's left hand.
+	var skeleton: Skeleton3D = rig.find_children("*", "Skeleton3D", true, false)[0]
+	var grip := BoneAttachment3D.new()
+	grip.bone_name = "hand_l"
+	skeleton.add_child(grip)
+	var barrel := CylinderMesh.new()
+	barrel.top_radius = 0.024
+	barrel.bottom_radius = 0.02
+	barrel.height = 0.19
+	var handle := MeshInstance3D.new()
+	handle.mesh = barrel
+	handle.material_override = material(Color("1f2426"))
+	handle.rotation.z = PI / 2
+	handle.position = Vector3(0.06, 0.03, 0.0)
+	grip.add_child(handle)
+	var lens := MeshInstance3D.new()
+	var cap := CylinderMesh.new()
+	cap.top_radius = 0.026
+	cap.bottom_radius = 0.026
+	cap.height = 0.01
+	lens.mesh = cap
+	lens.material_override = material(Color("fff6dc"), 3.0)
+	lens.rotation.z = PI / 2
+	lens.position = Vector3(0.16, 0.03, 0.0)
+	grip.add_child(lens)
+	# Mara's own body: seen in third person, a shadow-caster in first person.
+	player = person("mara", HarborData.START, 0.0, "Idle_Loop")
+	for name in player.anim.get_animation_list():
+		if name.begins_with("Jump") or name == "Interact":
+			player.anim.get_animation(name).loop_mode = Animation.LOOP_NONE
+
+# Reach out with the free hand when Mara uses something.
+func reach() -> void:
+	var clip := clip_name(arms_anim, "Interact")
+	arms_anim.play(clip, 0.15, 1.6)
+	arms_anim.queue(arms_idle)
+	if third_person:
+		player.anim.play(clip_name(player.anim, "Interact"), 0.2, 1.4)
+
+func toggle_view() -> void:
+	third_person = not third_person
+
+func update_body(place: Vector2, delta: float) -> void:
+	var root: Node3D = player.root
+	root.position = world(place, jump_height)
+	if body_speed > 0.3:
+		var heading := body_now - body_prev
+		root.rotation.y = lerp_angle(root.rotation.y, atan2(heading.x, heading.y), 1.0 - exp(-delta * 10.0))
+	elif not third_person:
+		root.rotation.y = yaw + PI
+	# The body never shows in first person; with shadows on it still casts one.
+	var shown := third_person or (not low_quality and sun.shadow_enabled)
+	root.visible = shown and not menu
+	var mode := GeometryInstance3D.SHADOW_CASTING_SETTING_ON if third_person else GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY
+	for mesh in root.find_children("*", "MeshInstance3D", true, false):
+		mesh.cast_shadow = mode
+	if not root.visible:
+		return
+	var anim: AnimationPlayer = player.anim
+	if anim.current_animation == clip_name(anim, "Interact") and anim.is_playing():
+		return
+	var wanted := "Idle_Loop"
+	var rate := 1.0
+	if jump_height > 0.05:
+		wanted = "Jump_Loop"
+	elif sprinting:
+		wanted = "Sprint_Loop"
+		rate = body_speed / 5.5
+	elif body_speed > 0.3:
+		wanted = "Walk_Loop"
+		rate = body_speed / 1.6
+	var clip := clip_name(anim, wanted)
+	if anim.current_animation != clip:
+		anim.play(clip, 0.25)
+	anim.speed_scale = clampf(rate, 0.6, 2.4)
+
+# Over-the-shoulder camera that slides in instead of passing through walls.
+func follow_camera(place: Vector2, delta: float) -> void:
+	var pivot := world(place, 1.55 + jump_height)
+	var look := Vector3(-sin(yaw) * cos(pitch), sin(pitch), -cos(yaw) * cos(pitch))
+	var right := Vector3(cos(yaw), 0, -sin(yaw))
+	var reach_out := 2.4
+	var gate_open: bool = campaign.pumps.count(true) == 3
+	var step := 0.2
+	while step <= 2.4:
+		var probe := pivot - look * step + right * 0.5 * step / 2.4
+		if HarborData.blocked(Vector2(probe.x, probe.z) * SCALE, 6.0, gate_open) or probe.y < 0.25:
+			reach_out = maxf(0.5, step - 0.3)
+			break
+		step += 0.2
+	orbit = lerpf(orbit, reach_out, 1.0 - exp(-delta * (14.0 if reach_out < orbit else 3.0)))
+	eyes.position = pivot - look * orbit + right * 0.5 * orbit / 2.4
+	eyes.rotation = Vector3(pitch, yaw, 0)

@@ -4,6 +4,10 @@
     "sha256": "f3958560cf28562e87381b5ee962fb434e216c2132847dd802b991dcbf7c466e"
   },
   {
+    "path": "audio/buoy_bell.ogg",
+    "sha256": "300a896142d939e29fadcc90439524410f31813d7b7eada06ed57eed52dc255e"
+  },
+  {
     "path": "audio/creak.ogg",
     "sha256": "d03c6c915c93e460a7ff6e51002af39d56690b9dc2d14e5762985e079195a4ec"
   },
@@ -66,6 +70,10 @@
   {
     "path": "audio/ship_horn.ogg",
     "sha256": "8e8cb5b3b0c24e18b77653e09f8455d9617c687d622dffe6dddcf6938e8532f9"
+  },
+  {
+    "path": "audio/ship_horn_synth.ogg",
+    "sha256": "436f9d59deddb33d18f56f76966f857d23b882fb78d418b365187e0766830875"
   },
   {
     "path": "audio/step_metal_1.ogg",
@@ -240,6 +248,62 @@
     "sha256": "4bb3e2b341d1602182802e5513ebf59701885fe7fffe5e2e23a2acea2fa4436e"
   },
   {
+    "path": "characters/mara.glb",
+    "sha256": "9955ed4fcdee9ad3ee4117ab759f1565c54a02f7f9a70f836bd13fbeea1e58f2"
+  },
+  {
+    "path": "characters/mara_T_Eye_Brown.webp",
+    "sha256": "1c212146312dfa9b254669add7d7f9123d9a54efaf2ad940082e38823dfbf758"
+  },
+  {
+    "path": "characters/mara_T_Eye_Normal.webp",
+    "sha256": "7afb99ff4baf5521a8d1b98b4920bf0b2a8b89967732db6beca0eaf7eb83135c"
+  },
+  {
+    "path": "characters/mara_T_Hair_1_BaseColor.webp",
+    "sha256": "5e82b2988a490c1ed5a95db0c4b99a52409216fb77744133bf69b1b4ef3110f2"
+  },
+  {
+    "path": "characters/mara_T_Hair_1_Normal.webp",
+    "sha256": "6505cb28a082e09bf7680a18b1d6d9155874fa8c469a16b96fd71ce6ef90db6f"
+  },
+  {
+    "path": "characters/mara_T_Hair_2_BaseColor.webp",
+    "sha256": "87c98bc08d88243b6e0a91fd58bcaa9c8b4a2211756381a09e8fed79513d69aa"
+  },
+  {
+    "path": "characters/mara_T_Hair_2_Normal.webp",
+    "sha256": "bcba3507b382741895f78330ea5f89a25f8d4868cc20f4822338e49b3abe7787"
+  },
+  {
+    "path": "characters/mara_T_Superhero_Female_Dark_BaseColor.webp",
+    "sha256": "25f366781a6c5717e185a19c655bfa40c3b08739a6c35d53f3e5098ae19d1622"
+  },
+  {
+    "path": "characters/mara_T_Superhero_Female_Normal.webp",
+    "sha256": "b34aa891de8de5e31c446283e84ef4e001db2fbc2fcd9dc54fe4da901c62a4bd"
+  },
+  {
+    "path": "characters/mara_T_Superhero_Female_Roughness.webp",
+    "sha256": "42c8ca048e58c518cb98b7933ef260093b9a539281b4f43c05945226232ff3c9"
+  },
+  {
+    "path": "characters/mara_arms.glb",
+    "sha256": "a23ff6b6263288686a7ceb22215e0ed1f2f29d75d2ea1d5a55e8af0ee3617d0c"
+  },
+  {
+    "path": "characters/mara_arms_T_Superhero_Female_Dark_BaseColor.webp",
+    "sha256": "25f366781a6c5717e185a19c655bfa40c3b08739a6c35d53f3e5098ae19d1622"
+  },
+  {
+    "path": "characters/mara_arms_T_Superhero_Female_Normal.webp",
+    "sha256": "b34aa891de8de5e31c446283e84ef4e001db2fbc2fcd9dc54fe4da901c62a4bd"
+  },
+  {
+    "path": "characters/mara_arms_T_Superhero_Female_Roughness.webp",
+    "sha256": "42c8ca048e58c518cb98b7933ef260093b9a539281b4f43c05945226232ff3c9"
+  },
+  {
     "path": "characters/sera.glb",
     "sha256": "fff5eac24c00e607166ed84c3513a46f0fc48b96caf0f0e8b8ead1e863f68ee7"
   },
@@ -270,6 +334,66 @@
   {
     "path": "characters/sera_T_Superhero_Female_Roughness.webp",
     "sha256": "42c8ca048e58c518cb98b7933ef260093b9a539281b4f43c05945226232ff3c9"
+  },
+  {
+    "path": "city/License.txt",
+    "sha256": "c38cee408d022e57e44e49f1cd655c2fe0dc881a07b881276b795215cdc0de69"
+  },
+  {
+    "path": "city/Textures/colormap.png",
+    "sha256": "191bec3889aaaca5018380038fecc129ebb5c2182879a099b7b538b3fa050b5d"
+  },
+  {
+    "path": "city/low-detail-building-a.glb",
+    "sha256": "c3986108805f0aa7e27e566f5052cb5e8d478417e267779e55ade583ea809a0a"
+  },
+  {
+    "path": "city/low-detail-building-b.glb",
+    "sha256": "ef2ab63731c38a469df7f993c26b0e8137746f90ac20ed9485d61f48aa50fbdb"
+  },
+  {
+    "path": "city/low-detail-building-c.glb",
+    "sha256": "91ea91b2399cbb94e9b2209e12823dc5b720affc7163f74e0cb8ee07faf62d85"
+  },
+  {
+    "path": "city/low-detail-building-d.glb",
+    "sha256": "cca2c05bba22e1e33c5aeb3c4746843b61235cc75cb2c0269e9e0755b276f121"
+  },
+  {
+    "path": "city/low-detail-building-g.glb",
+    "sha256": "f9bc2fe27ffc93689a317959542ad6d1c24aeeaa1efcfed59f7ba67423f65702"
+  },
+  {
+    "path": "city/low-detail-building-h.glb",
+    "sha256": "6de95299129118224b739845202a6d6a688e3ca6f9f61c4b0fd04dba99a61e23"
+  },
+  {
+    "path": "city/low-detail-building-i.glb",
+    "sha256": "e277aad27d3e98f5880ac65acee0ec1f68cc20e7fb28eed0a688afe48f6564ae"
+  },
+  {
+    "path": "city/low-detail-building-j.glb",
+    "sha256": "a1291d4e277c45ee53fa5dc610490c54c302ab1cdc677b6b6b2ce31670f0423c"
+  },
+  {
+    "path": "city/low-detail-building-k.glb",
+    "sha256": "36215b34b01de7a48a78b9cc344a577ed436e13596b59d2bcb01bab9f50aab5c"
+  },
+  {
+    "path": "city/low-detail-building-l.glb",
+    "sha256": "6cc75bfa0e821db2997dca8a14d9f63c675de5987781c2ff0977b8a644d25fd5"
+  },
+  {
+    "path": "city/low-detail-building-m.glb",
+    "sha256": "597d8c18ac63de895de66fc4fe0695bd9958d76ccb9b340ad0dfd1589666a22e"
+  },
+  {
+    "path": "city/low-detail-building-wide-a.glb",
+    "sha256": "4687e3200e1aba16d333a169ca5f7e5489c05ffcaeb06b7159a82c77ea42b42b"
+  },
+  {
+    "path": "city/low-detail-building-wide-b.glb",
+    "sha256": "c082149c94ce9f6ae06969a7dbf4b3e92009cda8be90f1bcd5b89b9adcb1ce23"
   },
   {
     "path": "concrete/Color.jpg",
@@ -380,6 +504,14 @@
     "sha256": "7b2d5ca874c8e659ee6cfd1614f0470b70410b2ddc7620ac83b8954dedeb861d"
   },
   {
+    "path": "industrial/shipping-container-b.glb",
+    "sha256": "290b3808149f8a9456ee96ff682fcf6a99f76adeac8e3b7b38234be434ea455c"
+  },
+  {
+    "path": "industrial/shipping-container-c.glb",
+    "sha256": "6a272420c37ccf4b354565d75c5d1fd889cd568297c215c681fcf11ef8c8ae13"
+  },
+  {
     "path": "industrial/water-tower.glb",
     "sha256": "11ac7ae19f32ce889bfe7a9c8e78c8ce8c77b7a76b52fd4ffa439a022ea2ef40"
   },
@@ -448,6 +580,22 @@
     "sha256": "91d57a3fcc8daad1b384ba92d3059213788d36c4202367b8c128c2a794a6770c"
   },
   {
+    "path": "props/cement_bag.glb",
+    "sha256": "a63fe9eac021825587fea82340c70915141851e4dddc14cfee81052eb24035c0"
+  },
+  {
+    "path": "props/cement_bag_cement_bag_arm_1k.webp",
+    "sha256": "0efef9867818388c3433fb6b703109620ffa59cf37f21a1cc199d614811e836e"
+  },
+  {
+    "path": "props/cement_bag_cement_bag_diff_1k.webp",
+    "sha256": "483d331bda41968214c1a909e90221a372142bed763e51571bb8e729de33b193"
+  },
+  {
+    "path": "props/cement_bag_cement_bag_nor_gl_1k.webp",
+    "sha256": "67db38a9d08917288be9126dbd273684cd091b36ca50660e953bd23f84462836"
+  },
+  {
     "path": "props/clipboard.glb",
     "sha256": "f413703860f07d2db4797754fa994e0d53cfa96efa3cb0cbc7474207287307d4"
   },
@@ -462,6 +610,22 @@
   {
     "path": "props/clipboard_clipboard_nor_gl_1k.webp",
     "sha256": "49d6cfc780cb9581660aba5966447d4263b02db6f4e96c2dc035df4bd5bbdbf7"
+  },
+  {
+    "path": "props/concrete_road_barrier.glb",
+    "sha256": "d87ddbff9b023b841b1663ccf7cbdc28ab71e9e1b27365bfa047d2c6511a0d99"
+  },
+  {
+    "path": "props/concrete_road_barrier_concrete_road_barrier_arm_1k.webp",
+    "sha256": "3e75a5570db9d6d3fe9adc58a53972cb25fe28d3103316e70ef82642587d7e97"
+  },
+  {
+    "path": "props/concrete_road_barrier_concrete_road_barrier_diff_1k.webp",
+    "sha256": "e8e3bf9c879af2ede635c0ddb657e7c07ebfa4af12cc116d5a04d70545095781"
+  },
+  {
+    "path": "props/concrete_road_barrier_concrete_road_barrier_nor_gl_1k.webp",
+    "sha256": "11fd57b28d7abed28105be7e3eebb38ec3b726826082f8316bb1ab2a15dc6e11"
   },
   {
     "path": "props/hand_truck.glb",
@@ -600,6 +764,22 @@
     "sha256": "c3c4d3ad31a21ed70353ca6f194251a170e9086bae4c0b211cafe0b34eaf9c06"
   },
   {
+    "path": "props/ocean_buoy_ocean_buoy_arm_1k.webp",
+    "sha256": "846a7dec48f9b53cae89bbcbc1ef5805172c0e0e21e4a2bfa18dd58913efdbe2"
+  },
+  {
+    "path": "props/ocean_buoy_ocean_buoy_diff_1k.webp",
+    "sha256": "c67ec1ca9f90382c5e65079bcc4058ca5c083f777eb369300bf060954ed66377"
+  },
+  {
+    "path": "props/ocean_buoy_ocean_buoy_emission_1k.webp",
+    "sha256": "5ac2dee16e3da9a871f5d5dd3a8383bc6bd5df6521fe6c37b3e6b2cb6541b09c"
+  },
+  {
+    "path": "props/ocean_buoy_ocean_buoy_nor_gl_1k.webp",
+    "sha256": "d61e169de0bc1e0aa0c40eac1d4b7ccf05adb2aa5a2dd0e7bff38d44d8ac25c2"
+  },
+  {
     "path": "props/old_military_crate.glb",
     "sha256": "fb4f47b2814ff506bea4100a723c5a5d0026f8ae75a5140d529e1dc05dc9a3c7"
   },
@@ -712,6 +892,22 @@
     "sha256": "fdc92dc07adb883d0ed19868074aca5220c2728e80475d8d17a91d78fe23e994"
   },
   {
+    "path": "props/street_lamp_01.glb",
+    "sha256": "eecd14ec998240dbb448888cab79da899b71b19690929aca0506147993c768fd"
+  },
+  {
+    "path": "props/street_lamp_01_street_lamp_01_arm_1k.webp",
+    "sha256": "298515d1ea24512e50059f7d8c08e5889f731a54e668602a1f5021b0859dffb7"
+  },
+  {
+    "path": "props/street_lamp_01_street_lamp_01_diff_1k.webp",
+    "sha256": "e099b525c06249ce1fd7a272d47041d13fc294fe737ad0959ff6c8e757aefaf6"
+  },
+  {
+    "path": "props/street_lamp_01_street_lamp_01_nor_gl_1k.webp",
+    "sha256": "d7fd29ffe99911dc71205a452c4dc0d2914b0b549b79e1b4773a71f3fbd1f7cb"
+  },
+  {
     "path": "props/trashbag.glb",
     "sha256": "cb163ec8cd74a2203b4161f9d212f9dba97b8a501a2ffc49eb850154cb1c951b"
   },
@@ -742,6 +938,22 @@
   {
     "path": "props/utility_box_01_utility_box_01_nor_gl_1k.webp",
     "sha256": "720a6ffdd9a7f43ff5954576f625dc21a1f2e3d0370902a32f4769388234fd04"
+  },
+  {
+    "path": "props/wooden_crate_02.glb",
+    "sha256": "c8b939b0fec53c7fd4513b780950c17f879b4cacda1a4be5f4b7f0da906080ac"
+  },
+  {
+    "path": "props/wooden_crate_02_wooden_crate_02_arm_1k.webp",
+    "sha256": "571d9b03b97ef862328de83dde8cc57b3d7bd3b57ebbdfcb225dd5bf02ed8e65"
+  },
+  {
+    "path": "props/wooden_crate_02_wooden_crate_02_diff_1k.webp",
+    "sha256": "ff13ca65aa3961e975f787e537903246fbd87e81f7d5e9c4ddf19e78c20d6148"
+  },
+  {
+    "path": "props/wooden_crate_02_wooden_crate_02_nor_gl_1k.webp",
+    "sha256": "f93c127bb814f6d04d04d74ad6d208b7104c988036c36b61be5047a5315f24c0"
   },
   {
     "path": "roads/License.txt",
@@ -812,6 +1024,22 @@
     "sha256": "9b27f03c26dabd49a7ea358615e63fe65e1c3d0157887d4ee1ecdfa1f0e688f3"
   },
   {
+    "path": "vehicles/License.txt",
+    "sha256": "c33b7f6453d134deae7b1b8493717d9ccfa754c25ab97f6de89b88f8fda19b00"
+  },
+  {
+    "path": "vehicles/Textures/colormap.png",
+    "sha256": "f3622a03a20c6696065cae9cbe391351be873508af190c2ebd1d420c055787a5"
+  },
+  {
+    "path": "vehicles/ambulance.glb",
+    "sha256": "9e429e2b6202c0d78d0c38b2adbaae6b77716bb2a0f6fbb2811556e1fb31edba"
+  },
+  {
+    "path": "vehicles/van.glb",
+    "sha256": "ed4ed56e8e5ed98db050af09ed2062b3b6bb7b93eab1e563cb6774b387b233a1"
+  },
+  {
     "path": "watercraft/License.txt",
     "sha256": "f5f520f81277128fb422aebe334d2f08e6d8e5f7face6008885d8ff920253724"
   },
@@ -846,5 +1074,17 @@
   {
     "path": "watercraft/buoy.glb",
     "sha256": "25cde68fddeaf8a43bb5c7d844817680f0ad9598b0df34a3b4ab79aafa55e14e"
+  },
+  {
+    "path": "watercraft/cargo-pile-a.glb",
+    "sha256": "679a2eede164da5bcd48c848984cf11a43287d9c17a1caa3723a39057d887f6e"
+  },
+  {
+    "path": "watercraft/ship-cargo-a.glb",
+    "sha256": "db3bbb076894cee821ec9b24951e5537ebbdc5ab5413d6c17ffb7d4e649c14fb"
+  },
+  {
+    "path": "watercraft/ship-cargo-c.glb",
+    "sha256": "dafbf1e0543e65585af2846932f66e2ac6561dab303174aa71b7fc61807f8677"
   }
 ]

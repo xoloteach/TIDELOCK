@@ -15,6 +15,7 @@ POLYHAVEN_MODELS = [
     "portable_searchlight", "medical_box", "metal_toolbox", "utility_box_01",
     "security_light", "trashbag", "propane_tank", "modular_street_seating",
     "hand_truck", "clipboard", "ocean_buoy",
+    "street_lamp_01", "concrete_road_barrier", "cement_bag", "wooden_crate_02",
 ]
 POLYHAVEN_HDRI = "abandoned_slipway"
 QUATERNIUS = {
@@ -24,6 +25,9 @@ QUATERNIUS = {
 KENNEY = {
     "kenney_watercraft-pack.zip": ("https://kenney.nl/media/pages/assets/watercraft-kit/a335cfed49-1713519620/kenney_watercraft-pack.zip", "cd1470c1cf441c7f46d0944ae6d0d897242365dc97677c5079b3238965d659f3"),
     "kenney_city-kit-roads.zip": ("https://kenney.nl/media/pages/assets/city-kit-roads/74288c9459-1791628607/kenney_city-kit-roads.zip", "374a4552115cbd11b4ec5c930ee31a533562dc78a09af249a655d03f7ea3b959"),
+    "kenney_city-kit-commercial_2.1.zip": ("https://kenney.nl/media/pages/assets/city-kit-commercial/a742d900eb-1753115042/kenney_city-kit-commercial_2.1.zip", "f8b09b081c2bb88bcc126e2dec1cb40fd0dad7e7e591b6c26aaefe96fb35276b"),
+    "kenney_car-kit.zip": ("https://kenney.nl/media/pages/assets/car-kit/1a312ec241-1775131960/kenney_car-kit.zip", "fac7dacac5c7874348cf19729af3ef205f3d366493edaf0a827d93f4fdf3d0c4"),
+    "kenney_city-kit-industrial_2.0.zip": ("https://kenney.nl/media/pages/assets/city-kit-industrial/0ec35b139d-1788171848/kenney_city-kit-industrial_2.0.zip", "5b381164e5760f3830a2dbee43b972deee38b2a695d091b56e238ab2910c96d2"),
     "kenney_factory-kit_3.0.zip": ("https://kenney.nl/media/pages/assets/factory-kit/edaac9d4f6-1777639602/kenney_factory-kit_3.0.zip", "7e31fb2308e90304672bd15cd18fa9d9f02c03731a8cbc57a8e3e1c181dfb0a7"),
 }
 # OpenGameArt CC0 sounds added for the harbour soundscape (file name: hash).

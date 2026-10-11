@@ -34,6 +34,7 @@ var dialogue_line: Array = []
 var dialogue_options: Array = []
 var fade := 1.0
 var target_glow := 0.0
+var third_person := false
 const INK := Color("102226")
 const PAPER := Color("e6e4cc")
 const MUTED := Color("94aba5")
@@ -94,6 +95,7 @@ func show_mode(value: String) -> void:
 			button("LOG", Rect2(1118, 23, 58, 42), "journal")
 			if touch:
 				button("LIGHT", Rect2(940,585,95,65), "light")
+				button("VIEW", Rect2(940,495,95,60), "view")
 				button("USE", Rect2(1053, 545, 108, 70), "interact")
 				button("PULSE", Rect2(1173, 480, 86, 64), "pulse")
 				var sprint := button("RUN", Rect2(1173, 565, 86, 76), "")
@@ -247,7 +249,7 @@ func paint() -> void:
 				text(Vector2(240, 267 + i * 59), rows[i][0], 23, AMBER)
 				text(Vector2(290, 266 + i * 59), rows[i][1], 18, PAPER)
 			line(Vector2(240, 482), Vector2(1040, 482), Color("4b6460"))
-			paragraph(Vector2(240, 516), "Mouse: look    WASD: move    Shift: run    E: use    Q: pulse\nF: flashlight    Space: hop    Tab: map    Esc: pause    1 / 2 / 3: valves\nOn touch screens: left stick to move, swipe centre/right to look + USE / RUN / PULSE. Landscape recommended.", 800, 17, MUTED)
+			paragraph(Vector2(240, 516), "Mouse: look    WASD: move    Shift: run    E: use    Q: pulse\nF: flashlight    V: first / third person    Space: hop    Tab: map    Esc: pause    1 / 2 / 3: valves\nOn touch screens: left stick to move, swipe centre/right to look + USE / RUN / PULSE / VIEW. Landscape recommended.", 800, 17, MUTED)
 		"journal":
 			heading("THE SHIFT RECORD", "MAP / RECOVERY STATUS / FIELD NOTES")
 			minimap(Rect2(160, 225, 420, 315), true)
@@ -312,8 +314,8 @@ func hud() -> void:
 		panel(Rect2(461, 112, 270, 39), 0.93)
 		text(Vector2(596, 138), "MACHINE HAS LINE OF SIGHT", 12, Color("e59a76"), true)
 	if not touch:
-		panel(Rect2(30, 662, 665, 32), 0.90)
-		text(Vector2(47, 683), "MOUSE LOOK   WASD MOVE   E USE   Q PULSE   F LIGHT   TAB MAP   ESC PAUSE", 12, MUTED)
+		panel(Rect2(30, 662, 735, 32), 0.90)
+		text(Vector2(47, 683), "MOUSE LOOK   WASD MOVE   E USE   Q PULSE   F LIGHT   V VIEW   TAB MAP   ESC PAUSE", 12, MUTED)
 		text(Vector2(1040, 680), "PULSE  " + ("READY" if campaign.pulse_cooldown <= 0 else "%ds" % ceili(campaign.pulse_cooldown)), 14, MINT)
 	else:
 		draw_circle(stick_origin, 78, Color(INK, 0.7))

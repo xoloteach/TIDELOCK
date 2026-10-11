@@ -48,4 +48,9 @@ enc "$o2/theircoming.ogg" ship_horn.ogg -22 "atrim=0:6,lowpass=f=700,afade=t=out
 enc "$o2/rain-gutter-loop_0.mp3" gutter_loop.ogg -24 "atrim=0:30"
 enc "$o2/short_wind_sound.wav" gust.ogg -22
 enc "$o2/tree_creak.ogg" creak.ogg -24
+# Synthesised (original, no third-party licence): a distant ship horn and a bell buoy.
+ffmpeg -loglevel error -y -f lavfi -i "aevalsrc='0.5*sin(2*PI*98*t)+0.35*sin(2*PI*147*t)+0.2*sin(2*PI*196*t)':s=22050:d=4.5" \
+  -af "afade=t=in:d=0.25,afade=t=out:st=3.4:d=1.1,lowpass=f=900,aecho=0.8:0.6:180|420:0.35|0.2" -ac 1 -c:a libvorbis -q:a 3 "$out/ship_horn_synth.ogg"
+ffmpeg -loglevel error -y -f lavfi -i "aevalsrc='sin(2*PI*620*t)*exp(-3*t)+0.6*sin(2*PI*1470*t)*exp(-4.5*t)+0.3*sin(2*PI*2310*t)*exp(-6*t)':s=22050:d=2.5" \
+  -af "volume=0.5" -ac 1 -c:a libvorbis -q:a 3 "$out/buoy_bell.ogg"
 ls -la "$out"

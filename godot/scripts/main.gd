@@ -55,7 +55,7 @@ func configure_input() -> void:
 		"move_up": [KEY_W, KEY_UP], "move_down": [KEY_S, KEY_DOWN],
 		"move_left": [KEY_A, KEY_LEFT], "move_right": [KEY_D, KEY_RIGHT],
 		"flashlight": [KEY_F], "jump": [KEY_SPACE], "sprint": [KEY_SHIFT], "interact": [KEY_E], "pulse": [KEY_Q],
-		"pause_game": [KEY_ESCAPE], "journal": [KEY_TAB],
+		"pause_game": [KEY_ESCAPE], "journal": [KEY_TAB], "camera": [KEY_V],
 		"valve_one": [KEY_1], "valve_two": [KEY_2], "valve_three": [KEY_3]
 	}
 	for name in mapping:
@@ -200,7 +200,9 @@ func _unhandled_input(event: InputEvent) -> void:
 				if event.is_action_pressed(["valve_one", "valve_two", "valve_three"][i]):
 					action("choose_%d" % i)
 		return
-	if event.is_action_pressed("flashlight") and ui.mode == "playing":
+	if event.is_action_pressed("camera") and ui.mode == "playing":
+		action("view")
+	elif event.is_action_pressed("flashlight") and ui.mode == "playing":
 		view.flashlight_enabled = not view.flashlight_enabled
 	elif event.is_action_pressed("jump") and ui.mode == "playing":
 		view.jump()
@@ -308,6 +310,10 @@ func action(command: String) -> void:
 			ui.show_mode("settings")
 		"light":
 			view.flashlight_enabled = not view.flashlight_enabled
+		"view":
+			view.toggle_view()
+			ui.third_person = view.third_person
+			save_settings()
 		"pulse":
 			if ui.mode == "playing" and campaign.pulse():
 				audio.cue("pulse")
@@ -354,6 +360,8 @@ func interact() -> void:
 		return
 	var nearest := campaign.nearest()
 	var index: int = nearest.index
+	if not nearest.kind.is_empty():
+		view.reach()
 	match nearest.kind:
 		"fuse":
 			campaign.collect_fuse(index)
@@ -467,7 +475,7 @@ func end_conversation() -> void:
 	publish_state()
 
 func save_settings() -> void:
-	var payload := JSON.stringify({"sound": ui.sound_enabled, "motion": ui.reduced_motion, "touch": ui.touch, "assist": campaign.assist})
+	var payload := JSON.stringify({"sound": ui.sound_enabled, "motion": ui.reduced_motion, "touch": ui.touch, "assist": campaign.assist, "third_person": view.third_person})
 	if OS.has_feature("web"):
 		var saved = JavaScriptBridge.eval("try { localStorage.setItem('tidelock-settings-v1', " + JSON.stringify(payload) + "); true; } catch (e) { false; }", true)
 		if not bool(saved):
@@ -503,13 +511,15 @@ func load_settings() -> void:
 	ui.reduced_motion = bool(data.get("motion", false))
 	ui.touch = touch_device or bool(data.get("touch", ui.touch))
 	campaign.assist = bool(data.get("assist", false))
+	view.third_person = bool(data.get("third_person", false))
+	ui.third_person = view.third_person
 	audio.set_enabled(ui.sound_enabled)
 
 # Read-only browser diagnostics. Tests still use the same keyboard/touch actions as players.
 func publish_state() -> void:
 	if not OS.has_feature("web"):
 		return
-	var data := {"renderer": "first-person-3d", "fps": Engine.get_frames_per_second(), "adapter": RenderingServer.get_video_adapter_name(), "yaw": view.yaw, "pitch": view.pitch, "flashlight": view.flashlight_enabled, "mode": ui.mode, "has_save": ui.has_save, "position": [campaign.position.x, campaign.position.y], "health": campaign.health, "stamina": campaign.stamina, "pumps": campaign.pumps, "fuses": campaign.fuse_count, "collected": campaign.collected, "logs": campaign.logs, "won": campaign.won, "assist": campaign.assist, "touch": ui.touch, "stick": [ui.joystick.x,ui.joystick.y], "move_touch": joystick_id, "look_touch": look_touch_id, "sound": ui.sound_enabled, "motion": ui.reduced_motion, "dials": ui.dials, "puzzle": ui.puzzle_index, "ending": ui.ending, "time": campaign.time_left, "rescues": campaign.rescues, "notice": ui.notice, "talked": campaign.talked, "flags": campaign.flags, "dialogue": ui.dialogue_line if ui.mode == "dialogue" else [], "options": ui.dialogue_options.size() if ui.mode == "dialogue" else 0, "radio": ui.radio_line}
+	var data := {"renderer": "first-person-3d", "fps": Engine.get_frames_per_second(), "adapter": RenderingServer.get_video_adapter_name(), "yaw": view.yaw, "pitch": view.pitch, "flashlight": view.flashlight_enabled, "mode": ui.mode, "has_save": ui.has_save, "position": [campaign.position.x, campaign.position.y], "health": campaign.health, "stamina": campaign.stamina, "pumps": campaign.pumps, "fuses": campaign.fuse_count, "collected": campaign.collected, "logs": campaign.logs, "won": campaign.won, "assist": campaign.assist, "touch": ui.touch, "stick": [ui.joystick.x,ui.joystick.y], "move_touch": joystick_id, "look_touch": look_touch_id, "sound": ui.sound_enabled, "motion": ui.reduced_motion, "dials": ui.dials, "puzzle": ui.puzzle_index, "ending": ui.ending, "time": campaign.time_left, "rescues": campaign.rescues, "notice": ui.notice, "talked": campaign.talked, "flags": campaign.flags, "dialogue": ui.dialogue_line if ui.mode == "dialogue" else [], "options": ui.dialogue_options.size() if ui.mode == "dialogue" else 0, "radio": ui.radio_line, "third_person": view.third_person}
 	var world := {"bounds": [140, 160, 2020, 1220], "canal": [1390, 630, 770, 140], "bridges": [], "obstacles": [], "pumps": [], "fuses": [], "logs": [], "exit": [HarborData.EXIT.x, HarborData.EXIT.y]}
 	for box in HarborData.BUILDINGS + HarborData.SOLID_CACHE:
 		world.obstacles.append([box.position.x, box.position.y, box.size.x, box.size.y])

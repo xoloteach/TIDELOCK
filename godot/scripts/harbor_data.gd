@@ -55,7 +55,7 @@ const PROPS := [
 	["trashbag", Vector2(902, 1134), 70.0, 0.0, Vector2(30, 28)],
 	["hand_truck", Vector2(1300, 1098), -30.0, 0.0, Vector2(34, 34)],
 	["metal_jerrycan_green", Vector2(1738, 975), 15.0, 0.0, Vector2(22, 22)],
-	["barrel_03", Vector2(1975, 528), 0.0, 0.0, Vector2(34, 34)],
+	["barrel_03", Vector2(2110, 470), 0.0, 0.0, Vector2(34, 34)],
 	["modular_street_seating", Vector2(2140, 1240), 90.0, 0.0, Vector2(40, 218)],
 	["medical_box", Vector2(2098, 1112), 80.0, 0.0, Vector2(28, 30)],
 	["barrel_03", Vector2(2138, 1108), 0.0, 0.0, Vector2(34, 34)],
