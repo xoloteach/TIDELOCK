@@ -44,7 +44,6 @@ enc "$o2/Seagull_Ambient_2.wav" gull_b.ogg -22
 enc "$o2/Seagull_Ambient_3.wav" gull_c.ogg -22
 # Far off across the water: band-limited with a long tail.
 enc "$o2/foghorn_kinda_gross.mp3" foghorn.ogg -20 "lowpass=f=900,aecho=0.8:0.7:420|900:0.35|0.2,apad=pad_dur=1.5"
-enc "$o2/theircoming.ogg" ship_horn.ogg -22 "atrim=0:6,lowpass=f=700,afade=t=out:st=4.5:d=1.5"
 enc "$o2/rain-gutter-loop_0.mp3" gutter_loop.ogg -24 "atrim=0:30"
 enc "$o2/short_wind_sound.wav" gust.ogg -22
 enc "$o2/tree_creak.ogg" creak.ogg -24

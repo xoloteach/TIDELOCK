@@ -38,7 +38,6 @@ OGA_SOUNDS = {
     "foghorn_kinda_gross.mp3": "791fd64d4eeedc29bd07f9ec28a60cf8d44c093cc8aac60742a62f2c09de9fe3",
     "rain-gutter-loop_0.mp3": "216f57eebace492b1d56226c13a728582735de7282c5cca43059cd3c960f083e",
     "short wind sound.wav": "4435f5ad1baf171f21f876f778d0a8a7447becea0c4955bb2566e0c63ab20f41",
-    "theircoming.ogg": "949975ecdd9bece552aebf3e7823f785f686e56886a6b8dfc7a0f9b9692aa6ec",
     "tree_creak.ogg": "465356e0e32e71a5c29fda529a0ac23af7791c62e3bd862e8cb2961eb104e1b1",
 }
 HEADERS = {"User-Agent": "TIDELOCK-asset-fetch/1.0"}

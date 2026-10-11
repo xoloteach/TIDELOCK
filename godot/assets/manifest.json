@@ -68,10 +68,6 @@
     "sha256": "39994d46104ea3629bf99868d74d338b22fd6a3b345fb94645a4d4cdbd8003bd"
   },
   {
-    "path": "audio/ship_horn.ogg",
-    "sha256": "8e8cb5b3b0c24e18b77653e09f8455d9617c687d622dffe6dddcf6938e8532f9"
-  },
-  {
     "path": "audio/ship_horn_synth.ogg",
     "sha256": "436f9d59deddb33d18f56f76966f857d23b882fb78d418b365187e0766830875"
   },

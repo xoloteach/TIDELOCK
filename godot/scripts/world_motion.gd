@@ -29,6 +29,17 @@ var pump_pools: Array[MeshInstance3D] = []
 var sign_label: Label3D
 var gulls: Array[Dictionary] = []
 var beacons: Array[Node3D] = []
+# Harbour ambience: gull calls over the water, a distant foghorn, wind gusts,
+# creaking moorings and a gutter pouring off the stores roof.
+const GULL_CALLS := [preload("res://assets/audio/gull_a.ogg"), preload("res://assets/audio/gull_b.ogg"), preload("res://assets/audio/gull_c.ogg")]
+var gull_voice: AudioStreamPlayer3D
+var foghorn: AudioStreamPlayer3D
+var creak: AudioStreamPlayer3D
+var gust: AudioStreamPlayer3D
+var gull_clock := 6.0
+var foghorn_clock := 40.0
+var creak_clock := 12.0
+var gust_cooldown := 0.0
 var beacon_lenses: Array[MeshInstance3D] = []
 
 func setup(owner_view: FirstPersonView) -> void:
@@ -57,6 +68,7 @@ func setup(owner_view: FirstPersonView) -> void:
 		if child is OmniLight3D and child.omni_range == 5.0:
 			lamp_lights.append(child)
 	puddles()
+	ambient_sounds()
 	for i in range(view.pumps.size()):
 		pump_station(view.pumps[i])
 	if not view.low_quality:
@@ -154,6 +166,7 @@ func update(delta: float, elapsed: float) -> void:
 		lens.emission = Color("77dbc1") if running else Color("dda94c")
 		lens.albedo_color = lens.emission
 		lens.emission_energy_multiplier = 2.2 if running else 0.5 + 0.5 * e
+	sounds(delta, elapsed)
 	for g in gulls:
 		g.angle += g.speed / g.radius * delta
 		var a: float = g.angle
@@ -258,3 +271,53 @@ func pump_station(pump: Node3D) -> void:
 	pump.add_child(vane)
 	view.box(vane, Vector3(0.16, 0.1, 0.012), Vector3.ZERO, black)
 	beacons.append(vane)
+
+func anchor(at: Vector3) -> Node3D:
+	var node := Node3D.new()
+	node.position = at
+	add_child(node)
+	return node
+
+func ambient_sounds() -> void:
+	gull_voice = view.sound3d(GULL_CALLS[0], anchor(Vector3(20, 9, -1)), -6.0, 60.0, false)
+	gull_voice.unit_size = 12.0
+	foghorn = view.sound3d(preload("res://assets/audio/foghorn.ogg"), anchor(Vector3(10, 4, 70)), 0.0, 250.0, false)
+	foghorn.unit_size = 40.0
+	creak = view.sound3d(preload("res://assets/audio/creak.ogg"), anchor(view.world(Vector2(900, 150), 0.3)), -2.0, 30.0, false)
+	gust = view.sound3d(preload("res://assets/audio/gust.ogg"), anchor(Vector3.ZERO), -4.0, 400.0, false)
+	gust.unit_size = 200.0
+	# Rain sheeting off the stores roof at its south-west corner.
+	view.sound3d(preload("res://assets/audio/gutter_loop.ogg"), anchor(view.world(Vector2(925, 1124), 0.4)), -4.0, 14.0, true)
+
+func audible() -> bool:
+	return view.sound_enabled and not view.menu and DisplayServer.get_name() != "headless"
+
+func sounds(delta: float, elapsed: float) -> void:
+	gull_clock -= delta
+	foghorn_clock -= delta
+	creak_clock -= delta
+	gust_cooldown -= delta
+	gust.position = view.eyes.position if view.eyes else Vector3.ZERO
+	if gull_clock <= 0.0:
+		gull_clock = randf_range(9.0, 22.0)
+		if audible():
+			# Call from a gull in flight if any are drawn, else from over the water.
+			var from: Vector3 = gulls[randi() % gulls.size()].root.position if not gulls.is_empty() else Vector3(randf_range(0, 45), 9, randf_range(-6, -1))
+			gull_voice.get_parent().position = from
+			gull_voice.stream = GULL_CALLS[randi() % GULL_CALLS.size()]
+			gull_voice.pitch_scale = randf_range(0.9, 1.1)
+			gull_voice.play()
+	if foghorn_clock <= 0.0:
+		foghorn_clock = randf_range(70.0, 130.0)
+		if audible():
+			foghorn.play()
+	if creak_clock <= 0.0:
+		creak_clock = randf_range(8.0, 20.0)
+		if audible():
+			creak.pitch_scale = randf_range(0.8, 1.05)
+			creak.play()
+	# A gust when the shared wind peaks.
+	if wind > 0.85 and gust_cooldown <= 0.0:
+		gust_cooldown = 14.0
+		if audible():
+			gust.play()

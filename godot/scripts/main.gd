@@ -402,7 +402,8 @@ func bark(delta: float) -> void:
 	for i in range(HarborData.NPC_IDS.size()):
 		if campaign.talked[i]:
 			speakers.append([HarborData.NPC_IDS[i], HarborData.NPC_POSITIONS[i]])
-	if campaign.pumps.count(true) == 3:
+	# Low quality draws no evacuees, so they must not speak from empty air.
+	if campaign.pumps.count(true) == 3 and not view.low_quality:
 		for entry in HarborData.EVACUEES:
 			speakers.append([entry[0], entry[1]])
 	for speaker in speakers:

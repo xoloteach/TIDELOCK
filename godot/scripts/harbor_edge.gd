@@ -60,6 +60,8 @@ var boats: Array[Dictionary] = []
 var leaf: Node3D
 var leaf_sound: AudioStreamPlayer3D
 var gate_down := false
+var prev_restored := -1
+var prev_menu := true
 var gate_drop := 0.0
 var culvert_flow: CPUParticles3D
 var culvert_foam: MeshInstance3D
@@ -681,9 +683,13 @@ func tick(delta: float, elapsed: float) -> void:
 	var restored: int = view.campaign.pumps.count(true)
 	# 3.7 The tide-lock leaf drops over 4 s once every pump runs.
 	var want_down := restored >= 3
+	# Only a repair made in play animates; a loaded checkpoint jumps straight to its state.
+	var repaired_now := prev_restored == 2 and not prev_menu
+	prev_restored = restored
+	prev_menu = view.menu
 	if want_down != gate_down:
 		gate_down = want_down
-		if want_down and not view.menu and ticks > 2:
+		if want_down and repaired_now:
 			if view.sound_enabled and DisplayServer.get_name() != "headless":
 				leaf_sound.play()
 		else:
