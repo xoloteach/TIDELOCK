@@ -9,6 +9,20 @@ current measurements.
 
 ### Added
 
+- Mara herself. First person shows her sleeves and torch hand, and V switches
+  to an over-the-shoulder third-person camera that keeps clear of walls.
+- A world beyond the quay: a container terminal with gantry cranes, moored and
+  anchored freighters, a mainland skyline whose windows light up as pumps
+  return, a breakwater lighthouse with a sweeping beam, channel buoys, a bell
+  buoy and a ship's horn.
+- A built quay edge: stone coping, bollards, ladders, railings, the canal
+  culvert and tide-lock gate, moored boats, sandbags, pallets, a jib crane,
+  storm wrack and Poly Haven street lamps.
+- Pools of lamplight on the wet paving, lamp halos, pump status pools that
+  turn green on repair, facade sign boards, gulls, wind-leaned rain, and
+  sector lamps that flicker until their pump is restored.
+- Readable notices on the walls, location radio, nearby remarks from the
+  people on the quay and evacuee epilogues in the ending.
 - People on the quay. Ivo kneels at the depot clinic's generator, Dax Ren
   waits by the North Weir with a torch, and Sera Holt and two evacuees wait
   beyond the east gate. They are Quaternius CC0 base characters dressed in
