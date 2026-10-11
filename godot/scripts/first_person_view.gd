@@ -49,6 +49,28 @@ var waves: Array[Dictionary] = []
 var splashes: CPUParticles3D
 # Software WebGL (and ?quality=low) draws less: shorter view ranges, no cosmetic particles.
 var low_quality := false
+# First-person feel: positions are interpolated between physics steps, and the
+# bob, footsteps, sway, lean and FOV all follow the distance actually walked.
+var body_prev := Vector2.ZERO
+var body_now := Vector2.ZERO
+var body_speed := 0.0
+var sprinting := false
+var stride := 0.0
+var last_step := 0
+var landing := 0.0
+var lean := 0.0
+var shake := 0.0
+var sway := Vector2.ZERO
+# First person shows Mara's own sleeves and torch hand; third person shows all of her.
+var tool_rest := Vector3(0.08, -1.47, -0.02)
+var arms_anim: AnimationPlayer
+var arms_idle := ""
+var player: Dictionary = {}
+var third_person := false
+var orbit := 2.4
+var motion: WorldMotion
+var backdrop: HarborBackdrop
+var edge: HarborEdge
 signal footstep
 signal thunder(strength: float)
 
@@ -148,19 +170,26 @@ func _ready() -> void:
 	settings.sky = sky
 	settings.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	settings.ambient_light_color = Color("9ab9c5")
-	settings.ambient_light_energy = 0.60
+	settings.ambient_light_energy = 0.55
 	settings.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	settings.fog_enabled = true
-	settings.fog_light_color = Color("58676d")
-	settings.fog_density = 0.010
+	settings.fog_light_color = Color("4e5f66")
+	# Let the photographed clouds and lightning show through the fog.
+	settings.fog_sky_affect = 0.4
+	settings.glow_enabled = not software
+	settings.glow_intensity = 0.6
+	settings.glow_bloom = 0.04
+	settings.fog_density = 0.012
 	env.environment = settings
 	environment = settings
 	add_child(env)
 	sun = DirectionalLight3D.new()
 	sun.light_color = Color("ded9c6")
-	sun.light_energy = 0.95
+	sun.light_energy = 0.85
 	sun.rotation_degrees = Vector3(-42, -32, 0)
-	sun.shadow_enabled = not software and not OS.has_feature("web")
+	# Real GPUs (including the web) get a directional shadow; software WebGL does not.
+	sun.shadow_enabled = not software
+	sun.shadow_blur = 1.5
 	sun.directional_shadow_max_distance = 55
 	add_child(sun)
 	var concrete := ShaderMaterial.new()
@@ -207,8 +236,6 @@ func _ready() -> void:
 		add_child(shadow)
 		box(self,Vector3(r.size.x/SCALE,0.08,r.size.y/SCALE),world(r.get_center(),0.04),steel)
 		model("industrial/"+names[i],Vector3(r.size.x/SCALE,4.3 if i<3 else 3.0,r.size.y/SCALE),world(r.get_center()))
-		if i<3:
-			label(self,["MORROW QUAY / DEPOT","BOROUGH POWER","NORTH WEIR WORKS"][i],world(r.get_center(),5.0),Color("d8dfcd"),32)
 	# Worn loading-lane paint and flush drains give the paved dock a human scale.
 	var paint := material(Color("a59b72"))
 	for x in range(270,1970,100):
@@ -217,16 +244,9 @@ func _ready() -> void:
 		box(self,Vector3(0.65,0.006,0.4),world(p,0.007),material(Color("14252b")))
 		for slot in range(6):
 			box(self,Vector3(0.025,0.01,0.38),world(p,0.012)+Vector3(-0.27+slot*0.105,0,0),steel)
-	# Quay edge walls match the world bounds and make inaccessible ocean readable.
-	for r in [Rect2(140,160,2020,10),Rect2(140,1370,2020,10),Rect2(140,160,10,1220),Rect2(2150,160,10,1220)]:
-		box(self,Vector3(r.size.x/SCALE,0.6,r.size.y/SCALE),world(r.get_center(),0.3),steel)
-	for p in [Vector2(190,280),Vector2(2050,280),Vector2(190,1270),Vector2(2080,910)]:
+	# The quay edge (coping, face, gate) is built by HarborEdge below.
+	for p in [Vector2(190,280),Vector2(2050,280),Vector2(190,1110),Vector2(2080,910)]:
 		model("survival/barrel",Vector3(0.6,0.9,0.6),world(p))
-	# Background silhouettes are beyond the playable seawall.
-	for i in range(7):
-		model("industrial/shipping-container-a",Vector3(3.2,1.7,1.5),Vector3(8+i*4.8,0,1.2))
-	model("industrial/water-tower",Vector3(2.5,8,2.5),Vector3(2,0,5))
-	model("industrial/chimney-large",Vector3(1.8,9,1.8),Vector3(43,0,3))
 	for i in range(3):
 		var pump := Node3D.new()
 		add_child(pump)
@@ -291,19 +311,22 @@ func _ready() -> void:
 	gate=box(self,Vector3(0.28,2.1,5.4),world(Vector2(2034,1225),1.05),yellow)
 	label(self,"EAST EVAC / RESTORE 3 PUMPS",world(HarborData.EXIT,3),Color("7cd6c6"),36)
 	box(self,Vector3(0.6,0.12,0.6),world(HarborData.EXIT,0.06),material(Color("79debc"),2))
-	for p in [Vector2(240,950),Vector2(610,810),Vector2(1300,570),Vector2(1700,820),Vector2(2110,1050)]:
-		box(self,Vector3(0.06,3.4,0.06),world(p,1.7),steel)
-		box(self,Vector3(0.4,0.1,0.25),world(p,3.4),material(Color("ffcb88"),2))
-		var lamp := OmniLight3D.new()
-		lamp.position=world(p,3.15)
-		lamp.light_color=Color("ffd398")
-		lamp.light_energy=1.4
-		lamp.omni_range=5
-		add_child(lamp)
+	# Quay edge, canal, emergency dressing and the street lamps (with their lights).
+	edge = HarborEdge.new()
+	add_child(edge)
+	edge.build(self)
 	quay_details()
+	notices()
 	people()
 	pump_effects()
 	weather_effects()
+	motion = WorldMotion.new()
+	add_child(motion)
+	motion.setup(self)
+	backdrop = HarborBackdrop.new()
+	add_child(backdrop)
+	backdrop.build(self)
+	sign_boards()
 	eyes=Camera3D.new()
 	eyes.fov=78
 	eyes.near=0.06
@@ -318,8 +341,7 @@ func _ready() -> void:
 	torch.spot_angle=34
 	torch.shadow_enabled=not software and not OS.has_feature("web")
 	eyes.add_child(torch)
-	tool=model("survival/tool-hammer",Vector3(0.18,0.34,0.08),Vector3(0.32,-0.35,-0.67),eyes)
-	tool.rotation_degrees=Vector3(12,0,-18)
+	first_person_arms()
 	var ring := TorusMesh.new()
 	ring.inner_radius=0.94
 	ring.outer_radius=1.0
@@ -374,6 +396,17 @@ func burst(at: Vector2, repair: bool = false) -> void:
 func look(relative: Vector2) -> void:
 	yaw -= relative.x * 0.0025
 	pitch = clampf(pitch-relative.y*0.0025,-1.25,1.25)
+	# The held tool trails the view slightly.
+	sway = (sway + relative * 0.00035).limit_length(0.05)
+
+# Called once per physics step with the simulated position.
+func physics_step(position_now: Vector2, delta: float, running: bool) -> void:
+	body_prev = body_now
+	body_now = position_now
+	if body_prev.distance_to(body_now) > 40.0:
+		body_prev = body_now
+	body_speed = body_prev.distance_to(body_now) / SCALE / delta
+	sprinting = running and body_speed > 4.0
 
 func jump() -> void:
 	if jump_height<=0:
@@ -388,22 +421,51 @@ func _process(delta: float) -> void:
 		eyes.position=Vector3(11+sin(elapsed*0.06)*3,7.0,29)
 		eyes.look_at(Vector3(23,0,13))
 		tool.visible=false
+		if not player.is_empty():
+			player.root.visible = false
 	else:
+		var was_airborne := jump_height > 0.0
 		jump_speed-=delta*9.8
 		jump_height=maxf(0,jump_height+jump_speed*delta)
-		if jump_height<=0:jump_speed=0
-		var bob := sin(elapsed*10)*0.035 if moving and not reduced_motion else 0.0
-		eyes.position=world(campaign.position,1.65+jump_height+bob)
-		eyes.rotation=Vector3(pitch,yaw,0)
-		# Lower the hammer while talking so it never covers the speaker.
-		tool.visible=focus_npc < 0
-		tool.position.y=-0.35+bob
-		if moving:
-			foot_clock+=delta
-			if foot_clock>0.42:
-				foot_clock=0
+		if jump_height<=0:
+			jump_speed=0
+			if was_airborne:
+				landing = 0.07
+		var motion := 0.0 if reduced_motion else 1.0
+		var place := body_prev.lerp(body_now, Engine.get_physics_interpolation_fraction())
+		if body_now == Vector2.ZERO:
+			place = campaign.position
+		# One step every 0.72 m walked; the dip lands on each footfall.
+		var pace := clampf(body_speed / 3.5, 0.0, 1.6)
+		stride += body_speed * delta / 0.72 if jump_height <= 0.0 else 0.0
+		var phase := stride * PI
+		if int(stride) != last_step:
+			last_step = int(stride)
+			if pace > 0.2:
 				footstep.emit()
-		else:foot_clock=0.3
+		var bob := -absf(sin(phase)) * 0.045 * pace * motion
+		var side := cos(phase) * 0.022 * pace * motion
+		landing = maxf(0.0, landing - delta * 0.35)
+		shake = maxf(0.0, shake - delta)
+		var jolt := Vector3(randf_range(-1, 1), randf_range(-1, 1), 0) * shake * 0.06 * motion
+		var right := Vector3(cos(yaw), 0, -sin(yaw))
+		eyes.position = world(place, 1.65 + jump_height + bob - landing * motion) + right * side + jolt
+		# Lean into strafes, widen the view a little at a run.
+		var strafe := 0.0
+		if body_speed > 0.2:
+			var velocity := (body_now - body_prev).normalized()
+			strafe = velocity.dot(Vector2(cos(yaw), -sin(yaw)))
+		lean = lerpf(lean, -strafe * 0.018 * pace * motion, 1.0 - exp(-delta * 6.0))
+		eyes.rotation = Vector3(pitch, yaw, lean)
+		eyes.fov = lerpf(eyes.fov, 78.0 + (5.0 if sprinting else 0.0) * motion, 1.0 - exp(-delta * 5.0))
+		tool.visible = focus_npc < 0 and not third_person
+		sway = sway.lerp(Vector2.ZERO, 1.0 - exp(-delta * 8.0))
+		var lowered := 0.06 if sprinting else 0.0
+		tool.position = tool_rest + Vector3(-sway.x + side * 0.5, sway.y + bob * 0.6 - lowered - landing * 0.5, 0) * maxf(motion, 0.0)
+		tool.rotation_degrees = Vector3(-lowered * 60, 180, side * 60 * motion)
+		update_body(place, delta)
+		if third_person:
+			follow_camera(place, delta)
 	torch.visible=flashlight_enabled and not menu
 	rain.position=eyes.position+Vector3(0,6,0)
 	rain.emitting=not reduced_motion
@@ -471,8 +533,8 @@ func quay_details() -> void:
 		prop_local(item[0], self, world(item[1], item[3]), item[2])
 	# Tyre fenders hang off the seaward face of the quay walls.
 	for x in range(260, 2100, 460 if low_quality else 230):
-		for edge in [[158.0, 0.0], [1382.0, 180.0]]:
-			var tyre := prop_local("old_tyre", self, world(Vector2(x, edge[0]), -0.15), edge[1])
+		for side in [[138.0, 0.0], [1402.0, 180.0]]:
+			var tyre := prop_local("old_tyre", self, world(Vector2(x, side[0]), -0.15), side[1])
 			tyre.rotation.x = 0.12
 	if low_quality:
 		# Extra lights cost a full pass per lit object in the compatibility renderer.
@@ -481,7 +543,7 @@ func quay_details() -> void:
 	for item in HarborData.PROPS:
 		if item[0] == "security_light":
 			var lamp := OmniLight3D.new()
-			var facing := Vector3(0, 0, 0.6).rotated(Vector3.UP, deg_to_rad(item[2]))
+			var facing := Vector3(0, 0, -0.6).rotated(Vector3.UP, deg_to_rad(item[2]))
 			lamp.position = world(item[1], item[3] - 0.2) + facing
 			lamp.light_color = Color("e8f0ff")
 			lamp.light_energy = 1.6
@@ -661,6 +723,7 @@ func speak(index: int, seconds: float) -> void:
 
 func alarm_cue() -> void:
 	damage_flash = maxf(damage_flash, 0.7)
+	shake = 0.35
 
 func update_world_effects(delta: float) -> void:
 	for node in sounds3d:
@@ -679,12 +742,15 @@ func update_world_effects(delta: float) -> void:
 			thunder.emit(thunder_strength)
 	flash = maxf(0.0, flash - delta * 2.6)
 	var flicker := flash * (0.6 + 0.4 * sin(elapsed * 60.0))
+	backdrop.tick(delta, flicker)
 	# Touch the sky only while lightning is visible; any change re-renders it.
 	if flicker > 0.0 or sky_flash > 0.0:
 		sky_flash = flicker
 		sky_material.set_shader_parameter("flash", flicker)
-		sun.light_energy = 0.95 + flicker * 2.2
-		environment.ambient_light_energy = 0.60 + flicker * 0.9
+		sun.light_energy = 0.85 + flicker * 2.2
+		environment.ambient_light_energy = 0.55 + flicker * 0.9
+	motion.update(delta, elapsed)
+	edge.tick(delta, elapsed)
 	for wave in waves:
 		wave.timer -= delta
 		if wave.timer <= 0.0:
@@ -728,3 +794,198 @@ func update_world_effects(delta: float) -> void:
 		var want_pitch := atan2(to_head.y, Vector2(to_head.x, to_head.z).length())
 		yaw = lerp_angle(yaw, want_yaw, 1.0 - exp(-delta * 4.0))
 		pitch = lerpf(pitch, want_pitch, 1.0 - exp(-delta * 4.0))
+
+# Facade sign boards; the BOROUGH POWER letters flicker until the pumps return.
+func sign_boards() -> void:
+	var panel := material(Color("1a2326"))
+	for item in [["MORROW QUAY / DEPOT", Vector2(665, 553), 0.0, Color("d8dfcd")],
+			["BOROUGH POWER", Vector2(980, 886), PI, Color("ffb64a")],
+			["NORTH WEIR WORKS", Vector2(1625, 514), 0.0, Color("d8dfcd")]]:
+		var board := Node3D.new()
+		add_child(board)
+		board.position = world(item[1], 3.75)
+		board.rotation.y = item[2]
+		box(board, Vector3(4.0, 0.6, 0.08), Vector3.ZERO, panel)
+		var text := Label3D.new()
+		text.text = item[0]
+		text.font = preload("res://fonts/FieldSans.ttf")
+		text.font_size = 44
+		text.pixel_size = 0.0075
+		text.modulate = item[3]
+		text.outline_size = 0
+		text.position = Vector3(0, 0, 0.05)
+		text.visibility_range_end = 40.0
+		board.add_child(text)
+		if item[0] == "BOROUGH POWER":
+			motion.sign_label = text
+
+# Readable notices mounted on walls: paper, a whiteboard, graffiti, a front page.
+func notices() -> void:
+	for note in Lore.NOTES:
+		var kind: String = str(note[0]).get_slice(" /", 0)
+		var holder := Node3D.new()
+		add_child(holder)
+		holder.position = world(note[2], 1.45)
+		# Lore yaw is a compass bearing (0 = north); a quad faces +Z at yaw 0.
+		holder.rotation.y = deg_to_rad(180.0 - float(note[3]))
+		var sheet := QuadMesh.new()
+		var paper := material(Color("d9d4c0"))
+		match kind:
+			"WHITEBOARD":
+				sheet.size = Vector2(1.0, 0.65)
+				paper = material(Color("e8ece6"))
+			"GRAFFITI":
+				sheet.size = Vector2(0.01, 0.01)
+			"QUAY LEDGER":
+				sheet.size = Vector2(0.5, 0.68)
+				paper = material(Color("cfc8b0"))
+			"TAPED NOTICE", "NOTICE":
+				sheet.size = Vector2(0.42, 0.58)
+				paper = material(Color("e7d27a"))
+			_:
+				sheet.size = Vector2(0.38, 0.5)
+		paper.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
+		var face := MeshInstance3D.new()
+		face.mesh = sheet
+		face.material_override = paper
+		face.visibility_range_end = 30.0
+		holder.add_child(face)
+		# Faint ruled lines read as text from a few metres away.
+		if kind != "GRAFFITI":
+			for row in range(5):
+				var rule := MeshInstance3D.new()
+				var bar := QuadMesh.new()
+				bar.size = Vector2(sheet.size.x * (0.75 if row % 2 == 0 else 0.55), 0.012)
+				rule.mesh = bar
+				rule.material_override = material(Color("4a4f4c"))
+				rule.position = Vector3(-sheet.size.x * 0.05, sheet.size.y * 0.28 - row * sheet.size.y * 0.12, 0.002)
+				rule.visibility_range_end = 12.0
+				holder.add_child(rule)
+		var title := Label3D.new()
+		title.font = preload("res://fonts/FieldSans.ttf")
+		title.text = str(note[0]).get_slice("/ ", 1) if kind == "GRAFFITI" else kind
+		if kind == "GRAFFITI":
+			title.text = str(note[1]).get_slice("\n", 0)
+			title.modulate = Color("d8604a")
+			title.font_size = 64
+			title.pixel_size = 0.004
+			title.position = Vector3(0, 0.25, 0.01)
+		else:
+			title.modulate = Color("e4eada")
+			title.font_size = 28
+			title.pixel_size = 0.0045
+			title.outline_size = 4
+			title.position = Vector3(0, sheet.size.y * 0.5 + 0.08, 0.01)
+		title.visibility_range_end = 9.0
+		holder.add_child(title)
+
+func first_person_arms() -> void:
+	tool = Node3D.new()
+	eyes.add_child(tool)
+	var rig: Node3D = load("res://assets/characters/mara_arms.glb").instantiate()
+	tool.add_child(rig)
+	for mesh in rig.find_children("*", "MeshInstance3D", true, false):
+		mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		for surface in range(mesh.mesh.get_surface_count()):
+			var mat: Material = mesh.get_active_material(surface)
+			if mat is StandardMaterial3D and mat.resource_name.begins_with("Cloth"):
+				mat.vertex_color_use_as_albedo = true
+	arms_anim = rig.find_children("*", "AnimationPlayer", true, false)[0]
+	for name in arms_anim.get_animation_list():
+		arms_anim.get_animation(name).loop_mode = Animation.LOOP_LINEAR
+	arms_idle = clip_name(arms_anim, "Idle_Torch_Loop")
+	arms_anim.get_animation(clip_name(arms_anim, "Interact")).loop_mode = Animation.LOOP_NONE
+	arms_anim.play(arms_idle)
+	# A working torch in Mara's left hand.
+	var skeleton: Skeleton3D = rig.find_children("*", "Skeleton3D", true, false)[0]
+	var grip := BoneAttachment3D.new()
+	grip.bone_name = "hand_l"
+	skeleton.add_child(grip)
+	var barrel := CylinderMesh.new()
+	barrel.top_radius = 0.024
+	barrel.bottom_radius = 0.02
+	barrel.height = 0.19
+	var handle := MeshInstance3D.new()
+	handle.mesh = barrel
+	handle.material_override = material(Color("1f2426"))
+	handle.rotation.z = PI / 2
+	handle.position = Vector3(0.06, 0.03, 0.0)
+	grip.add_child(handle)
+	var lens := MeshInstance3D.new()
+	var cap := CylinderMesh.new()
+	cap.top_radius = 0.026
+	cap.bottom_radius = 0.026
+	cap.height = 0.01
+	lens.mesh = cap
+	lens.material_override = material(Color("fff6dc"), 3.0)
+	lens.rotation.z = PI / 2
+	lens.position = Vector3(0.16, 0.03, 0.0)
+	grip.add_child(lens)
+	# Mara's own body: seen in third person, a shadow-caster in first person.
+	player = person("mara", HarborData.START, 0.0, "Idle_Loop")
+	for name in player.anim.get_animation_list():
+		if name.begins_with("Jump") or name == "Interact":
+			player.anim.get_animation(name).loop_mode = Animation.LOOP_NONE
+
+# Reach out with the free hand when Mara uses something.
+func reach() -> void:
+	var clip := clip_name(arms_anim, "Interact")
+	arms_anim.play(clip, 0.15, 1.6)
+	arms_anim.queue(arms_idle)
+	if third_person:
+		player.anim.play(clip_name(player.anim, "Interact"), 0.2, 1.4)
+
+func toggle_view() -> void:
+	third_person = not third_person
+
+func update_body(place: Vector2, delta: float) -> void:
+	var root: Node3D = player.root
+	root.position = world(place, jump_height)
+	if body_speed > 0.3:
+		var heading := body_now - body_prev
+		root.rotation.y = lerp_angle(root.rotation.y, atan2(heading.x, heading.y), 1.0 - exp(-delta * 10.0))
+	elif not third_person:
+		root.rotation.y = yaw + PI
+	# The body never shows in first person; with shadows on it still casts one.
+	var shown := third_person or (not low_quality and sun.shadow_enabled)
+	root.visible = shown and not menu
+	var mode := GeometryInstance3D.SHADOW_CASTING_SETTING_ON if third_person else GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY
+	for mesh in root.find_children("*", "MeshInstance3D", true, false):
+		mesh.cast_shadow = mode
+	if not root.visible:
+		return
+	var anim: AnimationPlayer = player.anim
+	if anim.current_animation == clip_name(anim, "Interact") and anim.is_playing():
+		return
+	var wanted := "Idle_Loop"
+	var rate := 1.0
+	if jump_height > 0.05:
+		wanted = "Jump_Loop"
+	elif sprinting:
+		wanted = "Sprint_Loop"
+		rate = body_speed / 5.5
+	elif body_speed > 0.3:
+		wanted = "Walk_Loop"
+		rate = body_speed / 1.6
+	var clip := clip_name(anim, wanted)
+	if anim.current_animation != clip:
+		anim.play(clip, 0.25)
+	anim.speed_scale = clampf(rate, 0.6, 2.4)
+
+# Over-the-shoulder camera that slides in instead of passing through walls.
+func follow_camera(place: Vector2, delta: float) -> void:
+	var pivot := world(place, 1.55 + jump_height)
+	var look := Vector3(-sin(yaw) * cos(pitch), sin(pitch), -cos(yaw) * cos(pitch))
+	var right := Vector3(cos(yaw), 0, -sin(yaw))
+	var reach_out := 2.4
+	var gate_open: bool = campaign.pumps.count(true) == 3
+	var step := 0.2
+	while step <= 2.4:
+		var probe := pivot - look * step + right * 0.5 * step / 2.4
+		if HarborData.blocked(Vector2(probe.x, probe.z) * SCALE, 6.0, gate_open) or probe.y < 0.25:
+			reach_out = maxf(0.5, step - 0.3)
+			break
+		step += 0.2
+	orbit = lerpf(orbit, reach_out, 1.0 - exp(-delta * (14.0 if reach_out < orbit else 3.0)))
+	eyes.position = pivot - look * orbit + right * 0.5 * orbit / 2.4
+	eyes.rotation = Vector3(pitch, yaw, 0)

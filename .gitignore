@@ -19,3 +19,6 @@ godot/.godot/
 
 # Downloaded CC0 sources for scripts/assets (rebuilt on demand)
 .asset-cache
+
+# Agent worktrees
+.claude/worktrees/

@@ -14,12 +14,32 @@ POLYHAVEN_MODELS = [
     "metal_jerrycan_green", "old_tyre", "lifebuoy", "portable_generator",
     "portable_searchlight", "medical_box", "metal_toolbox", "utility_box_01",
     "security_light", "trashbag", "propane_tank", "modular_street_seating",
-    "hand_truck", "clipboard",
+    "hand_truck", "clipboard", "ocean_buoy",
+    "street_lamp_01", "concrete_road_barrier", "cement_bag", "wooden_crate_02",
 ]
 POLYHAVEN_HDRI = "abandoned_slipway"
 QUATERNIUS = {
     "universal-base-characters": (15861669, "fdbf1804c90dfc1ea03e992bff7da2dfd1a79318e13270a660180f9308455f40", "ubc"),
     "universal-animation-library": (17958403, "cc73fc4e495b82958207316596317a3f40b9fa38065bde1027937452da537724", "ual"),
+}
+KENNEY = {
+    "kenney_watercraft-pack.zip": ("https://kenney.nl/media/pages/assets/watercraft-kit/a335cfed49-1713519620/kenney_watercraft-pack.zip", "cd1470c1cf441c7f46d0944ae6d0d897242365dc97677c5079b3238965d659f3"),
+    "kenney_city-kit-roads.zip": ("https://kenney.nl/media/pages/assets/city-kit-roads/74288c9459-1791628607/kenney_city-kit-roads.zip", "374a4552115cbd11b4ec5c930ee31a533562dc78a09af249a655d03f7ea3b959"),
+    "kenney_city-kit-commercial_2.1.zip": ("https://kenney.nl/media/pages/assets/city-kit-commercial/a742d900eb-1753115042/kenney_city-kit-commercial_2.1.zip", "f8b09b081c2bb88bcc126e2dec1cb40fd0dad7e7e591b6c26aaefe96fb35276b"),
+    "kenney_car-kit.zip": ("https://kenney.nl/media/pages/assets/car-kit/1a312ec241-1775131960/kenney_car-kit.zip", "fac7dacac5c7874348cf19729af3ef205f3d366493edaf0a827d93f4fdf3d0c4"),
+    "kenney_city-kit-industrial_2.0.zip": ("https://kenney.nl/media/pages/assets/city-kit-industrial/0ec35b139d-1788171848/kenney_city-kit-industrial_2.0.zip", "5b381164e5760f3830a2dbee43b972deee38b2a695d091b56e238ab2910c96d2"),
+    "kenney_factory-kit_3.0.zip": ("https://kenney.nl/media/pages/assets/factory-kit/edaac9d4f6-1777639602/kenney_factory-kit_3.0.zip", "7e31fb2308e90304672bd15cd18fa9d9f02c03731a8cbc57a8e3e1c181dfb0a7"),
+}
+# OpenGameArt CC0 sounds added for the harbour soundscape (file name: hash).
+OGA_SOUNDS = {
+    "Seagull Ambient 1.wav": "3e891a8cf944797b2f16e0c19b1167e7eea7a20c8c7693487dcfdcfa0eb5621c",
+    "Seagull Ambient 2.wav": "477246beafe31569b5937483b34b97043f4331a0639358fdcb3a55347d3d7a3a",
+    "Seagull Ambient 3.wav": "f9e5e283197945d3df148082a9c2110154bc5a1c7ff2b58c951134c182c61788",
+    "foghorn_kinda_gross.mp3": "791fd64d4eeedc29bd07f9ec28a60cf8d44c093cc8aac60742a62f2c09de9fe3",
+    "rain-gutter-loop_0.mp3": "216f57eebace492b1d56226c13a728582735de7282c5cca43059cd3c960f083e",
+    "short wind sound.wav": "4435f5ad1baf171f21f876f778d0a8a7447becea0c4955bb2566e0c63ab20f41",
+    "theircoming.ogg": "949975ecdd9bece552aebf3e7823f785f686e56886a6b8dfc7a0f9b9692aa6ec",
+    "tree_creak.ogg": "465356e0e32e71a5c29fda529a0ac23af7791c62e3bd862e8cb2961eb104e1b1",
 }
 HEADERS = {"User-Agent": "TIDELOCK-asset-fetch/1.0"}
 opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
@@ -69,6 +89,13 @@ for model in POLYHAVEN_MODELS:
     polyhaven_model(model)
     print("polyhaven", model)
 polyhaven_hdri(POLYHAVEN_HDRI)
+sha = lambda expected: (lambda data: hashlib.sha256(data).hexdigest() == expected)
+for name, (url, digest) in KENNEY.items():
+    save(CACHE / "kenney" / name, url, sha(digest))
+    print("kenney", name)
+for name, digest in OGA_SOUNDS.items():
+    save(CACHE / "oga2" / name.replace(" ", "_"), "https://opengameart.org/sites/default/files/" + urllib.parse.quote(name), sha(digest))
+    print("opengameart", name)
 for game, (upload, digest, folder) in QUATERNIUS.items():
     quaternius(game, upload, digest, folder)
     print("quaternius", game)

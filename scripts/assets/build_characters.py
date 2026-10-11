@@ -32,6 +32,14 @@ SKIN = {
     ("Female", "Dark"): "T_Superhero_Female_Dark_BaseColor.png", ("Female", "Light"): "T_Superhero_Female_Light_BaseColor.png",
 }
 CAST = {
+    # Mara Venn, the player: borough recovery waterproof with amber bands.
+    "mara": dict(body="Female", skin="Dark", hair=["Hair_BuzzedFemale"], hair_color=(0.03, 0.025, 0.02),
+                 jacket=(0.035, 0.12, 0.14), trousers=(0.07, 0.075, 0.08), boots=(0.02, 0.02, 0.02), bands=(0.95, 0.6, 0.16),
+                 clips=["Idle_Loop", "Walk_Loop", "Jog_Fwd_Loop", "Sprint_Loop", "Jump_Start", "Jump_Loop", "Jump_Land", "Interact"]),
+    # First-person view: the same sleeves and hands, nothing else.
+    "mara_arms": dict(body="Female", skin="Dark", hair=[], hair_color=(0, 0, 0), arms=True,
+                      jacket=(0.035, 0.12, 0.14), trousers=(0.07, 0.075, 0.08), boots=(0.02, 0.02, 0.02), bands=(0.95, 0.6, 0.16),
+                      clips=["Idle_Torch_Loop", "Interact"]),
     # Ivo keeps the clinic feeder alive: dark clinic waterproof with white bands.
     "ivo": dict(body="Male", skin="Dark", hair=["Hair_Buzzed", "Hair_Beard"], hair_color=(0.035, 0.03, 0.028),
                 jacket=(0.05, 0.13, 0.16), trousers=(0.09, 0.10, 0.11), boots=(0.025, 0.025, 0.025), bands=(0.85, 0.88, 0.86),
@@ -302,6 +310,25 @@ def dress(body, armature, spec):
     return clothing
 
 
+def keep_arms(body, clothing, armature):
+    """First-person rig: keep only sleeves and hands; drop head, torso, legs, eyes."""
+    m = landmarks(armature)
+    s = m["scale"]
+    # Forearms only: an upper arm this close to the camera would fill the screen.
+    for obj, test in ((clothing, lambda c: c.z > m["arm_z"] - 0.12 * s and abs(c.x) > 0.36 * s),
+                      (body, lambda c: abs(c.x) > m["wrist"] - 0.06 * s and c.z > m["arm_z"] - 0.2 * s)):
+        bm = bmesh.new()
+        bm.from_mesh(obj.data)
+        drop = [f for f in bm.faces if not test(obj.matrix_world @ f.calc_center_median())]
+        bmesh.ops.delete(bm, geom=drop, context="FACES")
+        bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")
+        bm.to_mesh(obj.data)
+        bm.free()
+    for obj in list(bpy.data.objects):
+        if obj.type == "MESH" and obj not in (body, clothing):
+            bpy.data.objects.remove(obj, do_unlink=True)
+
+
 def bake_occlusion(objects):
     scene = bpy.context.scene
     scene.render.engine = "CYCLES"
@@ -391,6 +418,8 @@ def build(name, spec, clips):
     for obj in list(bpy.data.objects):
         if obj.type == "MESH" and not any(obj.data.materials):
             bpy.data.objects.remove(obj, do_unlink=True)
+    if spec.get("arms"):
+        keep_arms(body, clothing, armature)
     bake_occlusion([clothing])
     armature.animation_data_create()
     for action in actions.values():

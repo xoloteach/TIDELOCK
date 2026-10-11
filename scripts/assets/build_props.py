@@ -22,7 +22,8 @@ PROPS = {
     "medical_box": (2000, 256), "metal_toolbox": (3000, 256), "utility_box_01": (3000, 512),
     "security_light": (2500, 256), "trashbag": (2500, 256), "propane_tank": (3000, 256),
     "modular_street_seating": (6000, 512), "hand_truck": (4000, 256),
-    "clipboard": (1500, 256),
+    "clipboard": (1500, 256), "ocean_buoy": (2500, 512),
+    "street_lamp_01": (1200, 512), "concrete_road_barrier": (400, 512), "cement_bag": (150, 256), "wooden_crate_02": (800, 512),
 }
 
 

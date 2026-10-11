@@ -14,6 +14,7 @@ var puzzle_index := -1
 var dials: Array = [1, 2, 0]
 var puzzle_error := ""
 var log_text := ""
+var log_title := "RECOVERED SHIFT LOG"
 var ending := ""
 var touch := false
 var joystick := Vector2.ZERO
@@ -31,6 +32,9 @@ var radio_line: Array = []
 var radio_time := 0.0
 var dialogue_line: Array = []
 var dialogue_options: Array = []
+var fade := 1.0
+var target_glow := 0.0
+var third_person := false
 const INK := Color("102226")
 const PAPER := Color("e6e4cc")
 const MUTED := Color("94aba5")
@@ -44,13 +48,14 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	clock += delta
+	fade = maxf(0.0, fade - delta * 3.5)
 	if mode == "playing":
 		notice_time = maxf(0, notice_time - delta)
 		radio_time -= delta
 		if radio_time <= 0.0:
 			radio_line = radio_queue.pop_front() if not radio_queue.is_empty() else []
 			radio_time = Story.duration(radio_line[1]) if not radio_line.is_empty() else 0.0
-			if not radio_line.is_empty():
+			if not radio_line.is_empty() and radio_line.size() < 3:
 				radio_started.emit()
 	queue_redraw()
 
@@ -67,6 +72,8 @@ func inform(text: String) -> void:
 	notice_time = 9.0
 
 func show_mode(value: String) -> void:
+	if value != mode:
+		fade = maxf(fade, 0.45)
 	mode = value
 	for b in buttons:
 		remove_child(b)
@@ -88,6 +95,7 @@ func show_mode(value: String) -> void:
 			button("LOG", Rect2(1118, 23, 58, 42), "journal")
 			if touch:
 				button("LIGHT", Rect2(940,585,95,65), "light")
+				button("VIEW", Rect2(940,495,95,60), "view")
 				button("USE", Rect2(1053, 545, 108, 70), "interact")
 				button("PULSE", Rect2(1173, 480, 86, 64), "pulse")
 				var sprint := button("RUN", Rect2(1173, 565, 86, 76), "")
@@ -187,6 +195,11 @@ func button(text: String, box: Rect2, action: String) -> Button:
 	return b
 
 func _draw() -> void:
+	paint()
+	if fade > 0.0:
+		draw_rect(Rect2(0, 0, 1280, 720), Color(0.01, 0.025, 0.03, fade))
+
+func paint() -> void:
 	if mode == "playing":
 		hud()
 		return
@@ -236,7 +249,7 @@ func _draw() -> void:
 				text(Vector2(240, 267 + i * 59), rows[i][0], 23, AMBER)
 				text(Vector2(290, 266 + i * 59), rows[i][1], 18, PAPER)
 			line(Vector2(240, 482), Vector2(1040, 482), Color("4b6460"))
-			paragraph(Vector2(240, 516), "Mouse: look    WASD: move    Shift: run    E: use    Q: pulse\nF: flashlight    Space: hop    Tab: map    Esc: pause    1 / 2 / 3: valves\nOn touch screens: left stick to move, swipe centre/right to look + USE / RUN / PULSE. Landscape recommended.", 800, 17, MUTED)
+			paragraph(Vector2(240, 516), "Mouse: look    WASD: move    Shift: run    E: use    Q: pulse\nF: flashlight    V: first / third person    Space: hop    Tab: map    Esc: pause    1 / 2 / 3: valves\nOn touch screens: left stick to move, swipe centre/right to look + USE / RUN / PULSE / VIEW. Landscape recommended.", 800, 17, MUTED)
 		"journal":
 			heading("THE SHIFT RECORD", "MAP / RECOVERY STATUS / FIELD NOTES")
 			minimap(Rect2(160, 225, 420, 315), true)
@@ -251,7 +264,7 @@ func _draw() -> void:
 			text(Vector2(635, 548), "SPOKEN WITH  /  " + (", ".join(met) if not met.is_empty() else "NOBODY YET"), 14, PAPER)
 			text(Vector2(165, 575), "● MARA    ◇ FUSE    ○ PUMP    ▪ SHIFT LOG    + EVAC", 14, MUTED)
 		"log":
-			heading("RECOVERED SHIFT LOG", "PAPER RECORD / MORROW QUAY")
+			heading(log_title, "PAPER RECORD / MORROW QUAY")
 			paragraph(Vector2(260, 287), log_text, 760, 26, PAPER, 40)
 		"puzzle":
 			puzzle()
@@ -270,10 +283,16 @@ func hud() -> void:
 	if hit_flash > 0:
 		draw_rect(Rect2(0,0,1280,720),Color(0.9,0.22,0.10,hit_flash*0.16))
 		draw_rect(Rect2(4,4,1272,712),Color(0.9,0.3,0.15,hit_flash),false,8)
-	line(Vector2(632,360),Vector2(638,360),PAPER,2)
-	line(Vector2(642,360),Vector2(648,360),PAPER,2)
-	line(Vector2(640,352),Vector2(640,358),PAPER,2)
-	line(Vector2(640,362),Vector2(640,368),PAPER,2)
+	# The crosshair opens into a ring when something can be used.
+	var aim := campaign.nearest()
+	target_glow = lerpf(target_glow, 0.0 if aim.kind.is_empty() else 1.0, 0.18)
+	var gap := 2.0 + target_glow * 5.0
+	line(Vector2(632 - gap,360),Vector2(638 - gap,360),PAPER,2)
+	line(Vector2(642 + gap,360),Vector2(648 + gap,360),PAPER,2)
+	line(Vector2(640,352 - gap),Vector2(640,358 - gap),PAPER,2)
+	line(Vector2(640,362 + gap),Vector2(640,368 + gap),PAPER,2)
+	if target_glow > 0.05:
+		draw_arc(Vector2(640, 360), 15, 0, TAU, 32, Color(AMBER, target_glow * 0.8), 1.5, true)
 	panel(Rect2(30, 25, 395, 113), 0.94)
 	text(Vector2(50, 50), "BOROUGH RECOVERY  /  MARA VENN", 12, MUTED)
 	text(Vector2(50, 81), ("Reach east evacuation" if campaign.pumps.count(true) == 3 else "Restore the flood defenses"), 22, PAPER)
@@ -295,8 +314,8 @@ func hud() -> void:
 		panel(Rect2(461, 112, 270, 39), 0.93)
 		text(Vector2(596, 138), "MACHINE HAS LINE OF SIGHT", 12, Color("e59a76"), true)
 	if not touch:
-		panel(Rect2(30, 662, 665, 32), 0.90)
-		text(Vector2(47, 683), "MOUSE LOOK   WASD MOVE   E USE   Q PULSE   F LIGHT   TAB MAP   ESC PAUSE", 12, MUTED)
+		panel(Rect2(30, 662, 735, 32), 0.90)
+		text(Vector2(47, 683), "MOUSE LOOK   WASD MOVE   E USE   Q PULSE   F LIGHT   V VIEW   TAB MAP   ESC PAUSE", 12, MUTED)
 		text(Vector2(1040, 680), "PULSE  " + ("READY" if campaign.pulse_cooldown <= 0 else "%ds" % ceili(campaign.pulse_cooldown)), 14, MINT)
 	else:
 		draw_circle(stick_origin, 78, Color(INK, 0.7))
@@ -309,11 +328,12 @@ func hud() -> void:
 	if not radio_line.is_empty():
 		var who: String = radio_line[0]
 		panel(Rect2(370, 166, 540, 74), 0.9)
-		text(Vector2(390, 188), "RADIO  /  " + Story.speaker_name(who), 11, Story.speaker_color(who))
+		var channel := "NEARBY" if radio_line.size() > 2 else "RADIO"
+		text(Vector2(390, 188), channel + "  /  " + Story.speaker_name(who), 11, Story.speaker_color(who))
 		paragraph(Vector2(390, 212), radio_line[1], 500, 16, PAPER, 21)
 	var near := campaign.nearest()
 	if not near.kind.is_empty():
-		var hint: String = {"fuse": "RECOVER CERAMIC FUSE", "pump": "OPEN MANUAL PUMP PANEL", "log": "READ SHIFT LOG", "exit": "REACH EVACUATION BEACON", "npc": "TALK"}[near.kind]
+		var hint: String = {"fuse": "RECOVER CERAMIC FUSE", "pump": "OPEN MANUAL PUMP PANEL", "log": "READ SHIFT LOG", "exit": "REACH EVACUATION BEACON", "npc": "TALK", "note": "READ NOTICE"}[near.kind]
 		if near.kind == "npc":
 			hint = "TALK TO " + Story.speaker_name(HarborData.NPC_IDS[near.index])
 		if near.kind == "pump" and campaign.fuse_count == 0:
@@ -374,10 +394,15 @@ func ending_screen() -> void:
 			outcome = "IVO / Put my feeder decision on the first page. The next shift needs it before they touch a switch."
 			if "ivo_trust" in campaign.flags:
 				outcome += " And go and sleep, Venn. That isn't advice."
-		paragraph(Vector2(250, 340), outcome, 780, 24, PAPER, 36)
-		text(Vector2(640, 464), "RECORD SENT" if ending == "broadcast" else "RECORD FILED", 17, AMBER, true)
-		text(Vector2(640, 516), "%d / 3 LOGS RECOVERED     •     %d RESCUES     •     %02d:%02d TIDE REMAINING" % [campaign.logs.count(true), campaign.rescues, int(campaign.time_left) / 60, int(campaign.time_left) % 60], 14, MUTED, true)
-		text(Vector2(640, 557), "MORROW QUAY / END OF SHIFT", 15, PAPER, true)
+		paragraph(Vector2(250, 322), outcome, 780, 22, PAPER, 32)
+		# The two people Mara walked out last get the final word.
+		var closing := []
+		for id in ["evacuee_a", "evacuee_b"]:
+			closing.append(Lore.EVACUEES[id].epilogue[ending])
+		paragraph(Vector2(250, 428), "\n".join(closing), 780, 15, MUTED, 21)
+		text(Vector2(640, 527), "RECORD SENT" if ending == "broadcast" else "RECORD FILED", 17, AMBER, true)
+		text(Vector2(640, 551), "%d / 3 LOGS RECOVERED     •     %d / %d NOTICES READ     •     %d RESCUES     •     %02d:%02d TIDE REMAINING" % [campaign.logs.count(true), campaign.notes_read.count(true), Lore.NOTES.size(), campaign.rescues, int(campaign.time_left) / 60, int(campaign.time_left) % 60], 13, MUTED, true)
+		text(Vector2(640, 576), "MORROW QUAY / END OF SHIFT", 14, PAPER, true)
 
 func minimap(box: Rect2, detailed: bool = false) -> void:
 	panel(box.grow(6), 0.92)

@@ -18,6 +18,8 @@ var talk_lines: Array = []
 var talk_index := 0
 var talk_reply := false
 var talk_flag := ""
+var bark_clock := 0.0
+var bark_count := {}
 
 func _ready() -> void:
 	configure_input()
@@ -53,7 +55,7 @@ func configure_input() -> void:
 		"move_up": [KEY_W, KEY_UP], "move_down": [KEY_S, KEY_DOWN],
 		"move_left": [KEY_A, KEY_LEFT], "move_right": [KEY_D, KEY_RIGHT],
 		"flashlight": [KEY_F], "jump": [KEY_SPACE], "sprint": [KEY_SHIFT], "interact": [KEY_E], "pulse": [KEY_Q],
-		"pause_game": [KEY_ESCAPE], "journal": [KEY_TAB],
+		"pause_game": [KEY_ESCAPE], "journal": [KEY_TAB], "camera": [KEY_V],
 		"valve_one": [KEY_1], "valve_two": [KEY_2], "valve_three": [KEY_3]
 	}
 	for name in mapping:
@@ -75,7 +77,7 @@ func connect_campaign() -> void:
 		audio.cue("damage")
 	)
 	campaign.radio.connect(func(key: String):
-		ui.radio({"spotted": Story.RADIO_SPOTTED, "first_pump": Story.RADIO_FIRST_PUMP, "gate": Story.RADIO_GATE}.get(key, []))
+		ui.radio({"spotted": Story.RADIO_SPOTTED, "first_pump": Story.RADIO_FIRST_PUMP, "gate": Story.RADIO_GATE}.get(key, Lore.RADIO_EVENTS.get(key, [])))
 		if key == "gate":
 			audio.cue("gate")
 	)
@@ -97,7 +99,12 @@ func _physics_process(delta: float) -> void:
 		movement = right * movement.x + forward * -movement.y
 		campaign.look_yaw = view.yaw
 		campaign.look_pitch = view.pitch
-		campaign.update(delta, movement, Input.is_action_pressed("sprint") or ui.sprint_held)
+		var running := Input.is_action_pressed("sprint") or ui.sprint_held
+		campaign.update(delta, movement, running)
+		view.physics_step(campaign.position, delta, running)
+	elif view != null and campaign != null:
+		# Menus and conversations: hold the camera still.
+		view.physics_step(campaign.position, delta, false)
 
 func _process(delta: float) -> void:
 	if ui == null:
@@ -110,6 +117,7 @@ func _process(delta: float) -> void:
 	view.reduced_motion = ui.reduced_motion
 	view.sound_enabled = ui.sound_enabled
 	ui.hit_flash = view.damage_flash
+	bark(delta)
 	bridge_timer += delta
 	if bridge_timer > 0.15:
 		bridge_timer = 0
@@ -192,7 +200,9 @@ func _unhandled_input(event: InputEvent) -> void:
 				if event.is_action_pressed(["valve_one", "valve_two", "valve_three"][i]):
 					action("choose_%d" % i)
 		return
-	if event.is_action_pressed("flashlight") and ui.mode == "playing":
+	if event.is_action_pressed("camera") and ui.mode == "playing":
+		action("view")
+	elif event.is_action_pressed("flashlight") and ui.mode == "playing":
 		view.flashlight_enabled = not view.flashlight_enabled
 	elif event.is_action_pressed("jump") and ui.mode == "playing":
 		view.jump()
@@ -300,6 +310,10 @@ func action(command: String) -> void:
 			ui.show_mode("settings")
 		"light":
 			view.flashlight_enabled = not view.flashlight_enabled
+		"view":
+			view.toggle_view()
+			ui.third_person = view.third_person
+			save_settings()
 		"pulse":
 			if ui.mode == "playing" and campaign.pulse():
 				audio.cue("pulse")
@@ -346,6 +360,8 @@ func interact() -> void:
 		return
 	var nearest := campaign.nearest()
 	var index: int = nearest.index
+	if not nearest.kind.is_empty():
+		view.reach()
 	match nearest.kind:
 		"fuse":
 			campaign.collect_fuse(index)
@@ -359,16 +375,46 @@ func interact() -> void:
 			ui.puzzle_error = ""
 			ui.show_mode("puzzle")
 		"log":
-			campaign.logs[index] = true
-			campaign.save_game()
+			campaign.read_log(index)
+			ui.log_title = "RECOVERED SHIFT LOG"
 			ui.log_text = HarborData.LOG_TEXT[index]
 			ui.show_mode("log")
+		"note":
+			campaign.read_note(index)
+			ui.log_title = Lore.NOTES[index][0]
+			ui.log_text = Lore.NOTES[index][1]
+			ui.show_mode("log")
+			audio.cue("click")
 		"exit":
 			campaign.finish()
 		"npc":
 			start_conversation(index)
 		_:
 			ui.inform("Move closer to a fuse box, pump panel or shift log. [Tab] opens the recovery map.")
+
+# People the player has met say a short line when passed; evacuees once the gate opens.
+func bark(delta: float) -> void:
+	bark_clock -= delta
+	if ui.mode != "playing" or bark_clock > 0.0 or not ui.radio_line.is_empty():
+		return
+	bark_clock = 1.0
+	var speakers := []
+	for i in range(HarborData.NPC_IDS.size()):
+		if campaign.talked[i]:
+			speakers.append([HarborData.NPC_IDS[i], HarborData.NPC_POSITIONS[i]])
+	if campaign.pumps.count(true) == 3:
+		for entry in HarborData.EVACUEES:
+			speakers.append([entry[0], entry[1]])
+	for speaker in speakers:
+		var lines: Array = Lore.BARKS.get(speaker[0], [])
+		var said: int = bark_count.get(speaker[0], 0)
+		if lines.is_empty() or said >= lines.size() or campaign.position.distance_to(speaker[1]) > 170.0:
+			continue
+		bark_count[speaker[0]] = said + 1
+		var entry: Array = lines[said]
+		ui.radio([[entry[0], entry[1], "near"]])
+		bark_clock = 14.0
+		return
 
 func on_bridge() -> bool:
 	for bridge in HarborData.BRIDGES:
@@ -429,7 +475,7 @@ func end_conversation() -> void:
 	publish_state()
 
 func save_settings() -> void:
-	var payload := JSON.stringify({"sound": ui.sound_enabled, "motion": ui.reduced_motion, "touch": ui.touch, "assist": campaign.assist})
+	var payload := JSON.stringify({"sound": ui.sound_enabled, "motion": ui.reduced_motion, "touch": ui.touch, "assist": campaign.assist, "third_person": view.third_person})
 	if OS.has_feature("web"):
 		var saved = JavaScriptBridge.eval("try { localStorage.setItem('tidelock-settings-v1', " + JSON.stringify(payload) + "); true; } catch (e) { false; }", true)
 		if not bool(saved):
@@ -465,13 +511,15 @@ func load_settings() -> void:
 	ui.reduced_motion = bool(data.get("motion", false))
 	ui.touch = touch_device or bool(data.get("touch", ui.touch))
 	campaign.assist = bool(data.get("assist", false))
+	view.third_person = bool(data.get("third_person", false))
+	ui.third_person = view.third_person
 	audio.set_enabled(ui.sound_enabled)
 
 # Read-only browser diagnostics. Tests still use the same keyboard/touch actions as players.
 func publish_state() -> void:
 	if not OS.has_feature("web"):
 		return
-	var data := {"renderer": "first-person-3d", "fps": Engine.get_frames_per_second(), "adapter": RenderingServer.get_video_adapter_name(), "yaw": view.yaw, "pitch": view.pitch, "flashlight": view.flashlight_enabled, "mode": ui.mode, "has_save": ui.has_save, "position": [campaign.position.x, campaign.position.y], "health": campaign.health, "stamina": campaign.stamina, "pumps": campaign.pumps, "fuses": campaign.fuse_count, "collected": campaign.collected, "logs": campaign.logs, "won": campaign.won, "assist": campaign.assist, "touch": ui.touch, "stick": [ui.joystick.x,ui.joystick.y], "move_touch": joystick_id, "look_touch": look_touch_id, "sound": ui.sound_enabled, "motion": ui.reduced_motion, "dials": ui.dials, "puzzle": ui.puzzle_index, "ending": ui.ending, "time": campaign.time_left, "rescues": campaign.rescues, "notice": ui.notice, "talked": campaign.talked, "flags": campaign.flags, "dialogue": ui.dialogue_line if ui.mode == "dialogue" else [], "options": ui.dialogue_options.size() if ui.mode == "dialogue" else 0, "radio": ui.radio_line}
+	var data := {"renderer": "first-person-3d", "fps": Engine.get_frames_per_second(), "adapter": RenderingServer.get_video_adapter_name(), "yaw": view.yaw, "pitch": view.pitch, "flashlight": view.flashlight_enabled, "mode": ui.mode, "has_save": ui.has_save, "position": [campaign.position.x, campaign.position.y], "health": campaign.health, "stamina": campaign.stamina, "pumps": campaign.pumps, "fuses": campaign.fuse_count, "collected": campaign.collected, "logs": campaign.logs, "won": campaign.won, "assist": campaign.assist, "touch": ui.touch, "stick": [ui.joystick.x,ui.joystick.y], "move_touch": joystick_id, "look_touch": look_touch_id, "sound": ui.sound_enabled, "motion": ui.reduced_motion, "dials": ui.dials, "puzzle": ui.puzzle_index, "ending": ui.ending, "time": campaign.time_left, "rescues": campaign.rescues, "notice": ui.notice, "talked": campaign.talked, "flags": campaign.flags, "dialogue": ui.dialogue_line if ui.mode == "dialogue" else [], "options": ui.dialogue_options.size() if ui.mode == "dialogue" else 0, "radio": ui.radio_line, "third_person": view.third_person}
 	var world := {"bounds": [140, 160, 2020, 1220], "canal": [1390, 630, 770, 140], "bridges": [], "obstacles": [], "pumps": [], "fuses": [], "logs": [], "exit": [HarborData.EXIT.x, HarborData.EXIT.y]}
 	for box in HarborData.BUILDINGS + HarborData.SOLID_CACHE:
 		world.obstacles.append([box.position.x, box.position.y, box.size.x, box.size.y])
