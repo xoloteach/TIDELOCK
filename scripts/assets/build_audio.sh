@@ -37,4 +37,15 @@ enc "$cache/oga/x/sfx100v2_metal_hit_01.ogg" metal_hit.ogg -16
 for i in 1 2 3; do enc "$cache/oga/x/sfx100v2_footstep_wet_0$i.ogg" step_wet_$i.ogg -24; done
 # The metal steps recording holds several footfalls; cut three of them out.
 for i in 0 1 2; do enc "$cache/oga/metal_steps.ogg" step_metal_$((i+1)).ogg -24 "silenceremove=start_periods=1:start_threshold=-40dB,atrim=$((i)):$((i)).55,asetpts=PTS-STARTPTS"; done
+# Harbour life (OpenGameArt CC0, fetched and verified by fetch_sources.py).
+o2="$cache/oga2"
+enc "$o2/Seagull_Ambient_1.wav" gull_a.ogg -22
+enc "$o2/Seagull_Ambient_2.wav" gull_b.ogg -22
+enc "$o2/Seagull_Ambient_3.wav" gull_c.ogg -22
+# Far off across the water: band-limited with a long tail.
+enc "$o2/foghorn_kinda_gross.mp3" foghorn.ogg -20 "lowpass=f=900,aecho=0.8:0.7:420|900:0.35|0.2,apad=pad_dur=1.5"
+enc "$o2/theircoming.ogg" ship_horn.ogg -22 "atrim=0:6,lowpass=f=700,afade=t=out:st=4.5:d=1.5"
+enc "$o2/rain-gutter-loop_0.mp3" gutter_loop.ogg -24 "atrim=0:30"
+enc "$o2/short_wind_sound.wav" gust.ogg -22
+enc "$o2/tree_creak.ogg" creak.ogg -24
 ls -la "$out"

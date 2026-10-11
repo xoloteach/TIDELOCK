@@ -15,6 +15,7 @@ trap 'rm -rf "$work"' EXIT
 "$blender" -b --python scripts/assets/build_props.py -- "$cache" "$work/props"
 bash scripts/assets/build_audio.sh "$cache" "$work/audio"
 mkdir -p "$work/sky" && bash scripts/assets/build_sky.sh "$cache" "$work/sky"
+bash scripts/assets/build_kenney.sh "$cache" godot/assets
 for kind in characters props audio sky; do
   mkdir -p "godot/assets/$kind"
   find "godot/assets/$kind" -maxdepth 1 -type f ! -name '*.import' ! -name License.txt -delete

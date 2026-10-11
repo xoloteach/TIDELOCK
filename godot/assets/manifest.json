@@ -4,8 +4,36 @@
     "sha256": "f3958560cf28562e87381b5ee962fb434e216c2132847dd802b991dcbf7c466e"
   },
   {
+    "path": "audio/creak.ogg",
+    "sha256": "d03c6c915c93e460a7ff6e51002af39d56690b9dc2d14e5762985e079195a4ec"
+  },
+  {
+    "path": "audio/foghorn.ogg",
+    "sha256": "46db949ec5a445ced4c47e52fa14c671eb084e46dfbf0e0e3a09c060db0613e8"
+  },
+  {
     "path": "audio/gate_release.ogg",
     "sha256": "2ebbbef20e1bfe2669d30032632eccea8b6debd53f09655f007466d1a59060ad"
+  },
+  {
+    "path": "audio/gull_a.ogg",
+    "sha256": "a9066cc7e66372587de230dcd6205eddd5cd35dcef575868ce498e32ce0c43ae"
+  },
+  {
+    "path": "audio/gull_b.ogg",
+    "sha256": "dfb87819693d5035880a06b8f9c76e9a08adfb05c8058f0a59d3eb083e2b255b"
+  },
+  {
+    "path": "audio/gull_c.ogg",
+    "sha256": "922f8bbc9dfbe5dbed62e0bd9257e56113989213f26203b78811302dde738997"
+  },
+  {
+    "path": "audio/gust.ogg",
+    "sha256": "337ed791780929f26118812379f07b000e159cd322be1f0d1e2510e213182b26"
+  },
+  {
+    "path": "audio/gutter_loop.ogg",
+    "sha256": "52868e7a64cac6526617a420dd9e2855683bfa62b6ec10e3b80cc781dc4fe042"
   },
   {
     "path": "audio/metal_hit.ogg",
@@ -34,6 +62,10 @@
   {
     "path": "audio/rain_loop.ogg",
     "sha256": "39994d46104ea3629bf99868d74d338b22fd6a3b345fb94645a4d4cdbd8003bd"
+  },
+  {
+    "path": "audio/ship_horn.ogg",
+    "sha256": "8e8cb5b3b0c24e18b77653e09f8455d9617c687d622dffe6dddcf6938e8532f9"
   },
   {
     "path": "audio/step_metal_1.ogg",
@@ -254,6 +286,22 @@
   {
     "path": "concrete/Roughness.jpg",
     "sha256": "9963905b22554fd82f7fa98e3f2280a05390184eb9d1086033949478a5164329"
+  },
+  {
+    "path": "factory/License.txt",
+    "sha256": "61e86565dd297e143ad631594980eda0a17fc81a4cd7c6d71acf2f5e0cad30b6"
+  },
+  {
+    "path": "factory/Textures/colormap.png",
+    "sha256": "35d7bd6900dde0208429eeaec87fa17fbf024ed59f3f4eab54bc92802eba9dd7"
+  },
+  {
+    "path": "factory/crane-magnet.glb",
+    "sha256": "9ed1d4690e03fd4cafcd30d182b2319cc6c743794a50108332cab9d76a083f6e"
+  },
+  {
+    "path": "factory/crane.glb",
+    "sha256": "ceaf20fb976ce0415d2b3d40e723b6ad377845818fa4fa68b55434108b1a6880"
   },
   {
     "path": "impact/License.txt",
@@ -548,6 +596,10 @@
     "sha256": "78c840fba33010f29c9bca5bcf88ba79fc4a4dc5b24f99911e46ff3d8743d66b"
   },
   {
+    "path": "props/ocean_buoy.glb",
+    "sha256": "c3c4d3ad31a21ed70353ca6f194251a170e9086bae4c0b211cafe0b34eaf9c06"
+  },
+  {
     "path": "props/old_military_crate.glb",
     "sha256": "fb4f47b2814ff506bea4100a723c5a5d0026f8ae75a5140d529e1dc05dc9a3c7"
   },
@@ -692,6 +744,46 @@
     "sha256": "720a6ffdd9a7f43ff5954576f625dc21a1f2e3d0370902a32f4769388234fd04"
   },
   {
+    "path": "roads/License.txt",
+    "sha256": "d23f51360ca2cd81711bc5b09ddfb28ac94da96d7ca2dbdef12c50f33f35c353"
+  },
+  {
+    "path": "roads/Textures/colormap.png",
+    "sha256": "a48e2962661ae44368ffddf3054f80ed8491d082b757dcc3011184cd9a98b185"
+  },
+  {
+    "path": "roads/construction-barrier.glb",
+    "sha256": "906f73a6d62d8de58a4c5a19e76ff95b460c42b37e5fa37478b8612f06793f26"
+  },
+  {
+    "path": "roads/construction-cone.glb",
+    "sha256": "50ceae45cd1d71f738a8f7c40f8b6b46f360063c2754bf717aae54013d6f2ee4"
+  },
+  {
+    "path": "roads/construction-fence.glb",
+    "sha256": "8414c211efbc68358eb747cf6d0ad6b9ba4fbc5094603ddabaadf18e8573abbe"
+  },
+  {
+    "path": "roads/construction-light.glb",
+    "sha256": "80dd781d6ad1bcb6e07670cc1ce03027031381768aca62b9c7b6e7df99c33650"
+  },
+  {
+    "path": "roads/dumpster.glb",
+    "sha256": "d87d4a812567d0e8b91c545387d758aa18f7652eb8fc0aed2513a83abb988dd6"
+  },
+  {
+    "path": "roads/electricity-pole.glb",
+    "sha256": "08c9b924e297eaa46bbd79ac09795c045848a4e38a72b2ce4f973517f840c2d3"
+  },
+  {
+    "path": "roads/light-curved.glb",
+    "sha256": "154dcce9d58ec2cd165e26c91a89c97bdd2838cf06d255099b3570df84f82ec6"
+  },
+  {
+    "path": "roads/road-sign-empty.glb",
+    "sha256": "7681ee84c5363e2c95a37593fc3bdd0afb81b23fa46ae6be1c0939a112a4306a"
+  },
+  {
     "path": "sky/License.txt",
     "sha256": "dac4b068523a744c7be24dc75f2fce36e789350e2dbec6853c703914b56e06b9"
   },
@@ -718,5 +810,41 @@
   {
     "path": "survival/tool-hammer.glb",
     "sha256": "9b27f03c26dabd49a7ea358615e63fe65e1c3d0157887d4ee1ecdfa1f0e688f3"
+  },
+  {
+    "path": "watercraft/License.txt",
+    "sha256": "f5f520f81277128fb422aebe334d2f08e6d8e5f7face6008885d8ff920253724"
+  },
+  {
+    "path": "watercraft/Textures/colormap.png",
+    "sha256": "311138350e74e35c5497a1bd8076a01740b7c302bed11027639fa553459a68de"
+  },
+  {
+    "path": "watercraft/boat-fishing-small.glb",
+    "sha256": "f6a03c86e7147764de6aac135433a428ee503d42852ecd101c1795a278480742"
+  },
+  {
+    "path": "watercraft/boat-row-large.glb",
+    "sha256": "25eed6585c7398654522d338ec575509615443887362ca8e598559b4eca142a3"
+  },
+  {
+    "path": "watercraft/boat-row-small.glb",
+    "sha256": "82e85f716f059b3e5cd90088a6e5b7c7722518ff93e1592afe3fff076b617830"
+  },
+  {
+    "path": "watercraft/boat-tug-a.glb",
+    "sha256": "02bae14474daa601658692fb7737fc7b7547a869412590243e08e883b8ba3985"
+  },
+  {
+    "path": "watercraft/boat-tug-b.glb",
+    "sha256": "cc9d64359eb1d3a68747d173f16a2ab4de8fd24b82742740c2634ab51b0c6a4b"
+  },
+  {
+    "path": "watercraft/buoy-flag.glb",
+    "sha256": "2c1116caef32bc00ac939f73c7c48fff343ef577580fad2210f31c0afc5836bd"
+  },
+  {
+    "path": "watercraft/buoy.glb",
+    "sha256": "25cde68fddeaf8a43bb5c7d844817680f0ad9598b0df34a3b4ab79aafa55e14e"
   }
 ]
