@@ -66,6 +66,27 @@ const PROPS := [
 	["lifebuoy", Vector2(700, 169), 0.0, 0.55, Vector2.ZERO],
 	["lifebuoy", Vector2(1450, 169), 0.0, 0.55, Vector2.ZERO],
 	["lifebuoy", Vector2(1200, 1371), 180.0, 0.55, Vector2.ZERO],
+	# Concrete barriers fence off the canal head and close the south promenade.
+	["concrete_road_barrier", Vector2(1356, 690), 92.0, 0.0, Vector2(34, 80)],
+	["concrete_road_barrier", Vector2(1356, 770), 87.0, 0.0, Vector2(34, 80)],
+	["concrete_road_barrier", Vector2(1330, 1345), 3.0, 0.0, Vector2(80, 34)],
+	["concrete_road_barrier", Vector2(1410, 1345), -4.0, 0.0, Vector2(80, 34)],
+	# A delivery that never got moved: a crate on the pallet stack and one beside it.
+	["wooden_crate_02", Vector2(947, 198), 98.0, 0.72, Vector2.ZERO],
+	["plastic_crate_03", Vector2(960, 228), -20.0, 0.0, Vector2.ZERO],
+]
+# Kenney set pieces: [res path under assets/, centre, yaw degrees, fitted size m, solid footprint u].
+const SET_PIECES := [
+	["vehicles/ambulance", Vector2(200, 1270), 184.0, Vector3(1.5, 1.9, 3.25), Vector2(90, 170)],
+	["vehicles/van", Vector2(1000, 1323), 93.0, Vector3(1.5, 1.45, 2.75), Vector2(150, 84)],
+	["watercraft/cargo-pile-a", Vector2(1340, 945), 0.0, Vector3(2.0, 1.15, 1.8), Vector2(100, 90)],
+]
+# Procedural dressing that blocks movement (sandbags, pallets, jib crane pedestal).
+const DRESSING_SOLIDS := [
+	Rect2(940, 1120, 90, 23),   # sandbags, B1 south face
+	Rect2(440, 690, 23, 70),    # sandbags, B4 east face
+	Rect2(915, 176, 70, 64),    # pallet stack + crates, north apron
+	Rect2(2095, 175, 50, 50),   # jib crane pedestal, NE weir yard
 ]
 const NPC_RADIUS := 22.0
 # The fenced yard in front of North Weir Works, used for a radio cue.
@@ -81,6 +102,10 @@ static func solids() -> Array[Rect2]:
 		var size: Vector2 = prop[4]
 		if size != Vector2.ZERO:
 			result.append(Rect2(prop[1] - size / 2, size))
+	for piece in SET_PIECES:
+		result.append(Rect2(piece[1] - piece[4] / 2, piece[4]))
+	for box in DRESSING_SOLIDS:
+		result.append(box)
 	return result
 
 static var SOLID_CACHE: Array[Rect2] = solids()

@@ -42,9 +42,9 @@ func setup(owner_view: FirstPersonView) -> void:
 	ramp.colors = PackedColorArray([Color(1, 1, 1, 1), Color(1, 1, 1, 0.35), Color(1, 1, 1, 0)])
 	gradient.gradient = ramp
 	for lamp in LAMPS:
-		var head: Vector2 = lamp[0] + lamp[1] * 27.5
+		var head: Vector2 = lamp[0] + lamp[1] * HarborEdge.LAMP_REACH
 		lamp_pools.append(glow_quad(view.world(head, 0.015), 6.0, Color("ffd398"), 0.35, false))
-		lamp_halos.append(glow_quad(view.world(head, 3.55), 0.9, Color("ffcb88"), 0.5, true))
+		lamp_halos.append(glow_quad(view.world(head, 3.35), 0.9, Color("ffcb88"), 0.5, true))
 	for p in SECURITY:
 		glow_quad(view.world(p, 0.015), 7.0, Color("e8f0ff"), 0.25, false)
 	glow_quad(view.world(Vector2(2060, 1200), 0.015), 6.0, Color("fff3d6"), 0.3, false)

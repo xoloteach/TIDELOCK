@@ -70,6 +70,7 @@ var third_person := false
 var orbit := 2.4
 var motion: WorldMotion
 var backdrop: HarborBackdrop
+var edge: HarborEdge
 signal footstep
 signal thunder(strength: float)
 
@@ -243,10 +244,8 @@ func _ready() -> void:
 		box(self,Vector3(0.65,0.006,0.4),world(p,0.007),material(Color("14252b")))
 		for slot in range(6):
 			box(self,Vector3(0.025,0.01,0.38),world(p,0.012)+Vector3(-0.27+slot*0.105,0,0),steel)
-	# Quay edge walls match the world bounds and make inaccessible ocean readable.
-	for r in [Rect2(140,160,2020,10),Rect2(140,1370,2020,10),Rect2(140,160,10,1220),Rect2(2150,160,10,1220)]:
-		box(self,Vector3(r.size.x/SCALE,0.6,r.size.y/SCALE),world(r.get_center(),0.3),steel)
-	for p in [Vector2(190,280),Vector2(2050,280),Vector2(190,1270),Vector2(2080,910)]:
+	# The quay edge (coping, face, gate) is built by HarborEdge below.
+	for p in [Vector2(190,280),Vector2(2050,280),Vector2(190,1110),Vector2(2080,910)]:
 		model("survival/barrel",Vector3(0.6,0.9,0.6),world(p))
 	for i in range(3):
 		var pump := Node3D.new()
@@ -312,15 +311,10 @@ func _ready() -> void:
 	gate=box(self,Vector3(0.28,2.1,5.4),world(Vector2(2034,1225),1.05),yellow)
 	label(self,"EAST EVAC / RESTORE 3 PUMPS",world(HarborData.EXIT,3),Color("7cd6c6"),36)
 	box(self,Vector3(0.6,0.12,0.6),world(HarborData.EXIT,0.06),material(Color("79debc"),2))
-	for p in [Vector2(240,950),Vector2(610,810),Vector2(1300,604),Vector2(1700,820),Vector2(2110,1050)]:
-		box(self,Vector3(0.06,3.4,0.06),world(p,1.7),steel)
-		box(self,Vector3(0.4,0.1,0.25),world(p,3.4),material(Color("ffcb88"),2))
-		var lamp := OmniLight3D.new()
-		lamp.position=world(p,3.15)
-		lamp.light_color=Color("ffd398")
-		lamp.light_energy=1.4
-		lamp.omni_range=5
-		add_child(lamp)
+	# Quay edge, canal, emergency dressing and the street lamps (with their lights).
+	edge = HarborEdge.new()
+	add_child(edge)
+	edge.build(self)
 	quay_details()
 	notices()
 	people()
@@ -539,8 +533,8 @@ func quay_details() -> void:
 		prop_local(item[0], self, world(item[1], item[3]), item[2])
 	# Tyre fenders hang off the seaward face of the quay walls.
 	for x in range(260, 2100, 460 if low_quality else 230):
-		for edge in [[158.0, 0.0], [1382.0, 180.0]]:
-			var tyre := prop_local("old_tyre", self, world(Vector2(x, edge[0]), -0.15), edge[1])
+		for side in [[138.0, 0.0], [1402.0, 180.0]]:
+			var tyre := prop_local("old_tyre", self, world(Vector2(x, side[0]), -0.15), side[1])
 			tyre.rotation.x = 0.12
 	if low_quality:
 		# Extra lights cost a full pass per lit object in the compatibility renderer.
@@ -756,6 +750,7 @@ func update_world_effects(delta: float) -> void:
 		sun.light_energy = 0.85 + flicker * 2.2
 		environment.ambient_light_energy = 0.55 + flicker * 0.9
 	motion.update(delta, elapsed)
+	edge.tick(delta, elapsed)
 	for wave in waves:
 		wave.timer -= delta
 		if wave.timer <= 0.0:
