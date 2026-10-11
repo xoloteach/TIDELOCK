@@ -68,6 +68,7 @@ var arms_idle := ""
 var player: Dictionary = {}
 var third_person := false
 var orbit := 2.4
+var motion: WorldMotion
 signal footstep
 signal thunder(strength: float)
 
@@ -233,8 +234,6 @@ func _ready() -> void:
 		add_child(shadow)
 		box(self,Vector3(r.size.x/SCALE,0.08,r.size.y/SCALE),world(r.get_center(),0.04),steel)
 		model("industrial/"+names[i],Vector3(r.size.x/SCALE,4.3 if i<3 else 3.0,r.size.y/SCALE),world(r.get_center()))
-		if i<3:
-			label(self,["MORROW QUAY / DEPOT","BOROUGH POWER","NORTH WEIR WORKS"][i],world(r.get_center(),5.0),Color("d8dfcd"),32)
 	# Worn loading-lane paint and flush drains give the paved dock a human scale.
 	var paint := material(Color("a59b72"))
 	for x in range(270,1970,100):
@@ -331,6 +330,10 @@ func _ready() -> void:
 	people()
 	pump_effects()
 	weather_effects()
+	motion = WorldMotion.new()
+	add_child(motion)
+	motion.setup(self)
+	sign_boards()
 	eyes=Camera3D.new()
 	eyes.fov=78
 	eyes.near=0.06
@@ -752,6 +755,7 @@ func update_world_effects(delta: float) -> void:
 		sky_material.set_shader_parameter("flash", flicker)
 		sun.light_energy = 0.85 + flicker * 2.2
 		environment.ambient_light_energy = 0.55 + flicker * 0.9
+	motion.update(delta, elapsed)
 	for wave in waves:
 		wave.timer -= delta
 		if wave.timer <= 0.0:
@@ -795,6 +799,30 @@ func update_world_effects(delta: float) -> void:
 		var want_pitch := atan2(to_head.y, Vector2(to_head.x, to_head.z).length())
 		yaw = lerp_angle(yaw, want_yaw, 1.0 - exp(-delta * 4.0))
 		pitch = lerpf(pitch, want_pitch, 1.0 - exp(-delta * 4.0))
+
+# Facade sign boards; the BOROUGH POWER letters flicker until the pumps return.
+func sign_boards() -> void:
+	var panel := material(Color("1a2326"))
+	for item in [["MORROW QUAY / DEPOT", Vector2(665, 553), 0.0, Color("d8dfcd")],
+			["BOROUGH POWER", Vector2(980, 886), PI, Color("ffb64a")],
+			["NORTH WEIR WORKS", Vector2(1625, 514), 0.0, Color("d8dfcd")]]:
+		var board := Node3D.new()
+		add_child(board)
+		board.position = world(item[1], 3.75)
+		board.rotation.y = item[2]
+		box(board, Vector3(4.0, 0.6, 0.08), Vector3.ZERO, panel)
+		var text := Label3D.new()
+		text.text = item[0]
+		text.font = preload("res://fonts/FieldSans.ttf")
+		text.font_size = 44
+		text.pixel_size = 0.0075
+		text.modulate = item[3]
+		text.outline_size = 0
+		text.position = Vector3(0, 0, 0.05)
+		text.visibility_range_end = 40.0
+		board.add_child(text)
+		if item[0] == "BOROUGH POWER":
+			motion.sign_label = text
 
 # Readable notices mounted on walls: paper, a whiteboard, graffiti, a front page.
 func notices() -> void:
