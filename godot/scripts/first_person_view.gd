@@ -264,7 +264,14 @@ func _ready() -> void:
 			rotor.position=Vector3(-0.25+j*0.25,0.83,0.62)
 			rotor.material_override=yellow
 			pump.add_child(rotor)
-		label(pump,HarborData.PUMP_NAMES[i],Vector3(0,2.3,0),Color("f2c36c"),34)
+		# Pump ID stencilled on the amber plate; only legible up close.
+		var tag := label(pump,HarborData.PUMP_NAMES[i].get_slice(" / ",1),Vector3(0,1.09,0.65),Color("3a2a0c"),44)
+		tag.billboard = BaseMaterial3D.BILLBOARD_DISABLED
+		tag.pixel_size = 0.0042
+		tag.outline_size = 0
+		tag.visibility_range_end = 6.0
+		tag.visibility_range_end_margin = 1.5
+		tag.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
 		pumps.append(pump)
 		# Contractor crate (Poly Haven) with a lit amber fuse tag on its lid.
 		var supply := Node3D.new()
@@ -274,7 +281,6 @@ func _ready() -> void:
 		var crate := prop_local("old_military_crate", supply, Vector3.ZERO, 0.0)
 		crate.scale = Vector3.ONE * 0.7
 		box(supply,Vector3(0.34,0.03,0.16),Vector3(0,0.23,0),material(Color("ffc46e"),1.5))
-		label(supply,"FUSE",Vector3(0,1.1,0),Color("ffc46e"),30)
 		supplies.append(supply)
 		var record := Node3D.new()
 		add_child(record)
@@ -283,7 +289,6 @@ func _ready() -> void:
 		box(record,Vector3(0.38,0.25,0.06),Vector3(0,1.1,0),material(Color("b3d2c9"),0.4))
 		var sheet := prop_local("clipboard", record, Vector3(0, 1.0, 0.05), 0.0)
 		sheet.rotation.x = -1.2
-		label(record,"SHIFT LOG",Vector3(0,1.7,0),Color("c7ded6"),26)
 		records.append(record)
 	# Autonomous maintenance machines built from tank/steel parts, with search lights.
 	for i in range(4):
@@ -309,7 +314,6 @@ func _ready() -> void:
 		# The lamp must stay the last child: _process toggles it when stunned.
 		patrol.move_child(lamp, patrol.get_child_count() - 1)
 	gate=box(self,Vector3(0.28,2.1,5.4),world(Vector2(2034,1225),1.05),yellow)
-	label(self,"EAST EVAC / RESTORE 3 PUMPS",world(HarborData.EXIT,3),Color("7cd6c6"),36)
 	box(self,Vector3(0.6,0.12,0.6),world(HarborData.EXIT,0.06),material(Color("79debc"),2))
 	# Quay edge, canal, emergency dressing and the street lamps (with their lights).
 	edge = HarborEdge.new()

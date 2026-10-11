@@ -40,6 +40,34 @@ const PAPER := Color("e6e4cc")
 const MUTED := Color("94aba5")
 const AMBER := Color("e2b46a")
 const MINT := Color("8bbab0")
+const WARM := Color("ec9871")
+# Type scale and spacing for the in-game HUD.
+const T_XS := 11
+const T_SM := 13
+const T_MD := 16
+const T_LG := 20
+const T_XL := 26
+const MARGIN := 36.0
+# HUD presentation state: everything fades toward its target instead of snapping.
+var obj_key := ""
+var obj_text := ""
+var obj_age := 99.0
+var hud_clock := 0.0
+var hints_moved := 0.0
+var hints_looked := 0.0
+var hints_gone := false
+var last_pos := Vector2.ZERO
+var last_yaw := 0.0
+var idle_time := 0.0
+var map_alpha := 0.0
+var vitals_alpha := 0.0
+var hints_alpha := 0.0
+var sub_alpha := 0.0
+var sub_age := 0.0
+var prompt_text := ""
+var prompt_alpha := 0.0
+var prompt_key := true
+var alarm_alpha := 0.0
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -52,17 +80,25 @@ func _process(delta: float) -> void:
 	if mode == "playing":
 		notice_time = maxf(0, notice_time - delta)
 		radio_time -= delta
+		sub_age += delta
 		if radio_time <= 0.0:
 			radio_line = radio_queue.pop_front() if not radio_queue.is_empty() else []
 			radio_time = Story.duration(radio_line[1]) if not radio_line.is_empty() else 0.0
+			sub_age = 0.0
 			if not radio_line.is_empty() and radio_line.size() < 3:
 				radio_started.emit()
+		track_hud(delta)
 	queue_redraw()
 
 func radio(lines: Array) -> void:
 	radio_queue.append_array(lines)
 
 func clear_radio() -> void:
+	obj_key = ""
+	hud_clock = 0.0
+	hints_moved = 0.0
+	hints_looked = 0.0
+	hints_gone = false
 	radio_queue.clear()
 	radio_line = []
 	radio_time = 0.0
@@ -70,6 +106,21 @@ func clear_radio() -> void:
 func inform(text: String) -> void:
 	notice = text.replace("[E]", "USE").replace("[Tab]", "LOG").replace("[Q]", "PULSE") if touch else text
 	notice_time = 9.0
+	# Field notes share the subtitle channel. A "SERA / ..." prefix names the speaker.
+	var who := ""
+	var body := notice
+	var split := notice.find(" / ")
+	if split > 0 and split < 14:
+		var head := notice.substr(0, split)
+		for id in Story.SPEAKERS:
+			if Story.speaker_name(id).begins_with(head):
+				who = id
+				body = notice.substr(split + 3)
+	# A note cuts in at once; a radio line it interrupts is replayed afterwards.
+	if radio_line.size() == 2:
+		radio_queue.push_front(radio_line)
+	radio_queue.push_front([who, body, "note"])
+	radio_time = 0.0
 
 func show_mode(value: String) -> void:
 	if value != mode:
@@ -178,6 +229,11 @@ func button(text: String, box: Rect2, action: String) -> Button:
 	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	b.add_theme_font_override("font", font)
 	b.add_theme_font_size_override("font_size", 20 if touch else 17)
+	if mode == "playing":
+		flat_button(b, action)
+		add_child(b)
+		buttons.append(b)
+		return b
 	b.add_theme_color_override("font_color", PAPER)
 	b.add_theme_color_override("font_hover_color", INK)
 	b.add_theme_color_override("font_pressed_color", INK)
@@ -193,6 +249,24 @@ func button(text: String, box: Rect2, action: String) -> Button:
 	add_child(b)
 	buttons.append(b)
 	return b
+
+# In-game buttons: no boxes for LOG / pause, a faint glass chip for touch controls.
+func flat_button(b: Button, action: String) -> void:
+	var chrome := action in ["pause", "journal"]
+	b.add_theme_font_size_override("font_size", T_MD if chrome else T_MD + 2)
+	b.add_theme_color_override("font_color", Color(PAPER, 0.62 if chrome else 0.85))
+	b.add_theme_color_override("font_hover_color", AMBER)
+	b.add_theme_color_override("font_pressed_color", AMBER)
+	b.focus_mode = Control.FOCUS_NONE
+	for state in ["normal", "hover", "pressed", "focus"]:
+		var style := StyleBoxFlat.new()
+		style.bg_color = Color(0, 0, 0, 0) if chrome else Color(INK, 0.5 if state == "pressed" else 0.32)
+		style.border_color = Color(PAPER, 0.28)
+		style.set_border_width_all(0 if chrome else 1)
+		style.set_corner_radius_all(3)
+		b.add_theme_stylebox_override(state, style)
+	if not action.is_empty():
+		b.pressed.connect(func(): command.emit(action))
 
 func _draw() -> void:
 	paint()
@@ -231,6 +305,10 @@ func paint() -> void:
 	match mode:
 		"pause":
 			heading("HOLD POSITION", "SIMULATION PAUSED / YOUR PROGRESS IS SAFE")
+			if not touch:
+				text(Vector2(640, 626), "CONTROLS", T_XS, AMBER, true)
+				text(Vector2(640, 650), "WASD move    Mouse look    Shift run    E use    Q pulse", T_SM, MUTED, true)
+				text(Vector2(640, 672), "F light    V view    Space hop    Tab map    Esc pause", T_SM, MUTED, true)
 		"settings":
 			heading("FIELD SETTINGS", "CHANGES APPLY IMMEDIATELY AND ARE SAVED LOCALLY")
 			text(Vector2(431, 624 if touch else 538), "Explorer mode removes damage and stops the tide clock.", 14, MUTED)
@@ -279,13 +357,75 @@ func heading(title: String, subtitle: String) -> void:
 	text(Vector2(640, 181), subtitle, 13, AMBER, true)
 	line(Vector2(240, 206), Vector2(1040, 206), Color("4b6460"))
 
+func objective_text() -> String:
+	if campaign.pumps.count(true) == 3:
+		return "Reach the east evacuation beacon"
+	if campaign.fuse_count > 0:
+		return "Install the fuse at a pump"
+	return "Find a ceramic fuse"
+
+# Presentation state for the HUD: what is visible, and how strongly.
+func track_hud(delta: float) -> void:
+	hud_clock += delta
+	obj_age += delta
+	var key := objective_text() + str(campaign.pumps.count(true))
+	if key != obj_key:
+		obj_key = key
+		obj_text = objective_text()
+		obj_age = 0.0
+	var step := campaign.position.distance_to(last_pos)
+	last_pos = campaign.position
+	if step > 60.0:
+		step = 0.0
+	var turn := absf(angle_difference(campaign.look_yaw, last_yaw))
+	last_yaw = campaign.look_yaw
+	if turn > 1.0:
+		turn = 0.0
+	hints_moved += step
+	hints_looked += turn
+	if hints_moved > 120.0 and hints_looked > 0.6:
+		hints_gone = true
+	idle_time = 0.0 if step > 0.3 else idle_time + delta
+	var show_map := idle_time > 1.2 or hud_clock < 6.0
+	map_alpha = move_toward(map_alpha, 0.85 if show_map else 0.0, delta * (1.6 if show_map else 3.0))
+	var sprinting := (Input.is_action_pressed("sprint") or sprint_held) and step > 0.3
+	var strained := campaign.health < 99.5 or campaign.stamina < 99.5 or hit_flash > 0.0 or sprinting
+	vitals_alpha = move_toward(vitals_alpha, 1.0 if strained else 0.0, delta * (4.0 if strained else 1.2))
+	var hints_on := not hints_gone and hud_clock < 20.0
+	hints_alpha = move_toward(hints_alpha, 1.0 if hints_on else 0.0, delta * (1.5 if hints_on else 1.2))
+	var aim := campaign.nearest()
+	var want := prompt_for(aim)
+	if not want.is_empty():
+		prompt_text = want
+		prompt_key = aim.kind != "pump" or campaign.fuse_count > 0
+	prompt_alpha = move_toward(prompt_alpha, 1.0 if not want.is_empty() else 0.0, delta * 6.0)
+	target_glow = lerpf(target_glow, 0.0 if aim.kind.is_empty() else 1.0, 0.18)
+	alarm_alpha = move_toward(alarm_alpha, 1.0 if campaign.alarm > 0.1 else 0.0, delta * 4.0)
+
+func prompt_for(aim: Dictionary) -> String:
+	match aim.kind:
+		"fuse":
+			return "Take fuse"
+		"pump":
+			var short: String = HarborData.PUMP_NAMES[aim.index].get_slice(" / ", 1)
+			return ("Repair " + short) if campaign.fuse_count > 0 else (short + " needs a fuse")
+		"log":
+			return "Read shift log"
+		"note":
+			return "Read notice"
+		"exit":
+			return "Reach the evacuation beacon"
+		"npc":
+			return "Talk to " + Story.speaker_name(HarborData.NPC_IDS[aim.index]).capitalize()
+	return ""
+
 func hud() -> void:
 	if hit_flash > 0:
 		draw_rect(Rect2(0,0,1280,720),Color(0.9,0.22,0.10,hit_flash*0.16))
 		draw_rect(Rect2(4,4,1272,712),Color(0.9,0.3,0.15,hit_flash),false,8)
-	# The crosshair opens into a ring when something can be used.
-	var aim := campaign.nearest()
-	target_glow = lerpf(target_glow, 0.0 if aim.kind.is_empty() else 1.0, 0.18)
+	# Soft edge shading keeps type readable without boxes.
+	shade(0.0, 120.0, 0.34, true)
+	# Crosshair opens into a ring when something can be used.
 	var gap := 2.0 + target_glow * 5.0
 	line(Vector2(632 - gap,360),Vector2(638 - gap,360),PAPER,2)
 	line(Vector2(642 + gap,360),Vector2(648 + gap,360),PAPER,2)
@@ -293,57 +433,120 @@ func hud() -> void:
 	line(Vector2(640,362 + gap),Vector2(640,368 + gap),PAPER,2)
 	if target_glow > 0.05:
 		draw_arc(Vector2(640, 360), 15, 0, TAU, 32, Color(AMBER, target_glow * 0.8), 1.5, true)
-	panel(Rect2(30, 25, 395, 113), 0.94)
-	text(Vector2(50, 50), "BOROUGH RECOVERY  /  MARA VENN", 12, MUTED)
-	text(Vector2(50, 81), ("Reach east evacuation" if campaign.pumps.count(true) == 3 else "Restore the flood defenses"), 22, PAPER)
-	text(Vector2(50, 114), "%d / 3 PUMPS    •    %d FUSES    •    %d / 3 LOGS" % [campaign.pumps.count(true), campaign.fuse_count, campaign.logs.count(true)], 14, AMBER)
-	panel(Rect2(462, 25, 270, 75), 0.94)
-	text(Vector2(479, 49), "TIDE / " + ("EXPLORER" if campaign.assist else "TIME TO SURGE"), 11, MUTED)
-	var seconds := maxi(0, int(campaign.time_left))
-	text(Vector2(479, 82), "%02d:%02d" % [seconds / 60, seconds % 60], 26, AMBER if seconds > 90 else Color("ec9871"))
-	var water := 1.0 - campaign.time_left / 480.0
-	for i in range(20):
-		draw_rect(Rect2(579 + i * 6, 64 - i * 0.6, 3, 16 + i * 0.6), AMBER if i < int(water * 20) else Color("3c5554"))
-	minimap(Rect2(1020, 114 if touch else 84, 220, 142 if touch else 162))
-	panel(Rect2(30, 158, 240, 59), 0.86)
-	text(Vector2(48, 182), "SUIT", 12, MUTED)
-	bar(Rect2(98, 173, 151, 7), campaign.health / 100.0, MINT)
-	text(Vector2(48, 205), "RUN", 12, MUTED)
-	bar(Rect2(98, 197, 151, 5), campaign.stamina / 100.0, AMBER)
-	if campaign.alarm > 0.1:
-		panel(Rect2(461, 112, 270, 39), 0.93)
-		text(Vector2(596, 138), "MACHINE HAS LINE OF SIGHT", 12, Color("e59a76"), true)
+	hud_objective()
+	hud_tide()
+	hud_vitals()
+	minimap(Rect2(1090, 114 if touch else 80, 150, 104))
+	if alarm_alpha > 0.01:
+		ghost(Vector2(640, 108), "MACHINE HAS LINE OF SIGHT", T_SM, Color(WARM, alarm_alpha * (0.65 + 0.35 * sin(clock * 6.0))), true)
+	if prompt_alpha > 0.01:
+		hud_prompt()
 	if not touch:
-		panel(Rect2(30, 662, 735, 32), 0.90)
-		text(Vector2(47, 683), "MOUSE LOOK   WASD MOVE   E USE   Q PULSE   F LIGHT   V VIEW   TAB MAP   ESC PAUSE", 12, MUTED)
-		text(Vector2(1040, 680), "PULSE  " + ("READY" if campaign.pulse_cooldown <= 0 else "%ds" % ceili(campaign.pulse_cooldown)), 14, MINT)
+		if campaign.pulse_cooldown > 0:
+			ghost(Vector2(1240 - 70, 700), "PULSE  %ds" % ceili(campaign.pulse_cooldown), T_SM, Color(PAPER, 0.6))
+		if hints_alpha > 0.01:
+			shade(600.0, 120.0, 0.30 * hints_alpha, false)
+			ghost(Vector2(640, 702), "WASD  move      Mouse  look      Shift  run      E  use      Q  pulse      F  light      Tab  map      Esc  pause", T_SM, Color(PAPER, 0.88 * hints_alpha), true)
 	else:
-		draw_circle(stick_origin, 78, Color(INK, 0.7))
-		draw_arc(stick_origin, 77, 0, TAU, 40, Color(MUTED, 0.4), 2)
-		draw_circle(stick_origin + joystick * 52, 29, Color(MINT, 0.65))
-		text(Vector2(124, 693), "MOVE", 15, MUTED, true)
-		text(stick_origin + Vector2(-61,7), "‹", 26, PAPER,true)
-		text(stick_origin + Vector2(61,7), "›", 26, PAPER,true)
-		text(Vector2(820,693), "DRAG RIGHT SIDE TO LOOK", 15, MUTED,true)
-	if not radio_line.is_empty():
-		var who: String = radio_line[0]
-		panel(Rect2(370, 166, 540, 74), 0.9)
-		var channel := "NEARBY" if radio_line.size() > 2 else "RADIO"
-		text(Vector2(390, 188), channel + "  /  " + Story.speaker_name(who), 11, Story.speaker_color(who))
-		paragraph(Vector2(390, 212), radio_line[1], 500, 16, PAPER, 21)
-	var near := campaign.nearest()
-	if not near.kind.is_empty():
-		var hint: String = {"fuse": "RECOVER CERAMIC FUSE", "pump": "OPEN MANUAL PUMP PANEL", "log": "READ SHIFT LOG", "exit": "REACH EVACUATION BEACON", "npc": "TALK", "note": "READ NOTICE"}[near.kind]
-		if near.kind == "npc":
-			hint = "TALK TO " + Story.speaker_name(HarborData.NPC_IDS[near.index])
-		if near.kind == "pump" and campaign.fuse_count == 0:
-			hint = "PUMP NEEDS A FUSE / FIND AN AMBER BOX"
-		panel(Rect2(375, 582, 530, 47), 0.95)
-		text(Vector2(640, 612), ("USE  /  " if touch else "[E]  ") + hint, 16, PAPER, true)
-	if notice_time > 0:
-		panel(Rect2(340, 449, 600, 112), 0.94)
-		text(Vector2(360, 474), "FIELD RADIO", 11, AMBER)
-		paragraph(Vector2(360, 500), notice, 556, 16, PAPER, 23)
+		draw_circle(stick_origin, 78, Color(INK, 0.28))
+		draw_arc(stick_origin, 77, 0, TAU, 40, Color(PAPER, 0.22), 1.5)
+		draw_circle(stick_origin + joystick * 52, 29, Color(PAPER, 0.35))
+		if hints_alpha > 0.01:
+			ghost(Vector2(124, 700), "MOVE", T_SM, Color(PAPER, 0.88 * hints_alpha), true)
+			ghost(Vector2(1100, 436), "DRAG TO LOOK", T_SM, Color(PAPER, 0.88 * hints_alpha), true)
+	hud_subtitle()
+
+func hud_objective() -> void:
+	# The new objective is announced, then settles into a single quiet line.
+	var big := minf(obj_age / 0.6, 1.0) * clampf((7.0 - obj_age) / 0.9, 0.0, 1.0)
+	var small := 0.62 * clampf((obj_age - 6.0) / 1.2, 0.0, 1.0)
+	if big > 0.01:
+		ghost(Vector2(MARGIN, 44), "OBJECTIVE", T_XS, Color(AMBER, big))
+		ghost(Vector2(MARGIN, 72), obj_text, T_LG, Color(PAPER, big))
+		var detail := "%d / 3 pumps     %d fuses     %d / 3 logs" % [campaign.pumps.count(true), campaign.fuse_count, campaign.logs.count(true)]
+		ghost(Vector2(MARGIN, 96), detail, T_SM, Color(PAPER, 0.6 * big))
+	if small > 0.01:
+		draw_rect(Rect2(MARGIN, 40, 10, 2), Color(AMBER, small))
+		ghost(Vector2(MARGIN + 18, 46), "%s    %d / 3" % [obj_text, campaign.pumps.count(true)], T_SM, Color(PAPER, small))
+
+func hud_tide() -> void:
+	var seconds := maxi(0, int(campaign.time_left))
+	var urgent := seconds <= 90 and not campaign.assist
+	var color := WARM if urgent else AMBER
+	ghost(Vector2(640, 36), "EXPLORER" if campaign.assist else "TIDE", T_XS, Color(PAPER, 0.6), true)
+	ghost(Vector2(640, 64), "%02d:%02d" % [seconds / 60, seconds % 60], T_XL, Color(color, 1.0 if not urgent else 0.75 + 0.25 * sin(clock * 4.0)), true)
+	var water := clampf(1.0 - campaign.time_left / 480.0, 0.0, 1.0)
+	draw_line(Vector2(580, 76), Vector2(700, 76), Color(PAPER, 0.18), 2)
+	draw_line(Vector2(580, 76), Vector2(580 + 120 * water, 76), Color(color, 0.9), 2)
+
+func hud_vitals() -> void:
+	if vitals_alpha <= 0.01:
+		return
+	var y := 134.0 if touch else 128.0
+	var low := campaign.health < 30.0
+	ghost(Vector2(MARGIN, y + 4), "SUIT", T_XS, Color(PAPER, 0.6 * vitals_alpha))
+	bar(Rect2(MARGIN + 44, y - 2, 96, 3), campaign.health / 100.0, Color(WARM if low else PAPER, 0.85 * vitals_alpha), vitals_alpha)
+	ghost(Vector2(MARGIN, y + 22), "RUN", T_XS, Color(PAPER, 0.6 * vitals_alpha))
+	bar(Rect2(MARGIN + 44, y + 16, 96, 3), campaign.stamina / 100.0, Color(AMBER, 0.85 * vitals_alpha), vitals_alpha)
+
+func hud_prompt() -> void:
+	var fsize := T_MD + 1
+	var width := font.get_string_size(prompt_text, HORIZONTAL_ALIGNMENT_LEFT, -1, fsize).x
+	var chip := 24.0 if (prompt_key and not touch) else 0.0
+	var total := width + (chip + 10.0 if chip > 0.0 else 0.0)
+	var x := 640.0 - total / 2.0
+	var y := 404.0 + (1.0 - prompt_alpha) * 6.0
+	if chip > 0.0:
+		draw_rect(Rect2(x, y - 17, chip, chip), Color(INK, 0.45 * prompt_alpha))
+		draw_rect(Rect2(x, y - 17, chip, chip), Color(AMBER, 0.9 * prompt_alpha), false, 1.0)
+		text(Vector2(x + chip / 2.0, y), "E", T_SM, Color(AMBER, prompt_alpha), true)
+		x += chip + 10.0
+	ghost(Vector2(x, y), prompt_text, fsize, Color(PAPER if prompt_key else Color(PAPER, 0.7), prompt_alpha * (1.0 if prompt_key else 0.75)))
+
+# One subtitle channel in the lower third: speaker, then the line.
+func hud_subtitle() -> void:
+	if radio_line.is_empty():
+		return
+	var alpha := minf(sub_age / 0.3, 1.0) * clampf(radio_time / 0.45, 0.0, 1.0)
+	if alpha <= 0.01:
+		return
+	var who: String = radio_line[0]
+	var rows := wrap_text(radio_line[1], 560.0, T_LG)
+	shade(520.0, 200.0, 0.46 * alpha, false)
+	var last := 668.0
+	var first := last - 27.0 * (rows.size() - 1)
+	var rise := (1.0 - alpha) * 4.0
+	var speaker := Story.speaker_name(who) if not who.is_empty() else "FIELD NOTE"
+	var color := Story.speaker_color(who) if not who.is_empty() else MUTED
+	ghost(Vector2(640, first - 30 + rise), speaker, T_SM, Color(color, alpha), true)
+	for i in range(rows.size()):
+		ghost(Vector2(640, first + 27.0 * i + rise), rows[i], T_LG, Color(PAPER, alpha), true)
+
+func wrap_text(value: String, width: float, size: int) -> Array:
+	var rows := []
+	var current := ""
+	for word in value.split(" "):
+		var candidate := current + (" " if not current.is_empty() else "") + word
+		if font.get_string_size(candidate, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x > width and not current.is_empty():
+			rows.append(current)
+			current = word
+		else:
+			current = candidate
+	rows.append(current)
+	return rows
+
+# Vertical gradient strip, dark at the screen edge.
+func shade(top: float, height: float, alpha: float, from_top: bool) -> void:
+	var edge := Color(0.01, 0.025, 0.03, alpha)
+	var faded := Color(0.01, 0.025, 0.03, 0.0)
+	var colors := PackedColorArray([edge, edge, faded, faded]) if from_top else PackedColorArray([faded, faded, edge, edge])
+	var bottom := top + height
+	draw_polygon(PackedVector2Array([Vector2(0, top), Vector2(1280, top), Vector2(1280, bottom), Vector2(0, bottom)]) if from_top else PackedVector2Array([Vector2(0, top), Vector2(1280, top), Vector2(1280, 720), Vector2(0, 720)]), colors)
+
+# Text with a soft drop shadow so it stays legible over any scene.
+func ghost(p: Vector2, value: String, size: int, color: Color, centered: bool = false) -> void:
+	text(p + Vector2(0, 1.5), value, size, Color(0.0, 0.01, 0.015, color.a * 0.65), centered)
+	text(p, value, size, color, centered)
 
 func conversation() -> void:
 	# Letterbox bars keep the speaker visible in the 3D view behind the subtitles.
@@ -405,36 +608,43 @@ func ending_screen() -> void:
 		text(Vector2(640, 576), "MORROW QUAY / END OF SHIFT", 14, PAPER, true)
 
 func minimap(box: Rect2, detailed: bool = false) -> void:
-	panel(box.grow(6), 0.92)
+	var k := 1.0 if detailed else map_alpha
+	if k <= 0.01:
+		return
+	if detailed:
+		panel(box.grow(6), 0.92)
 	var factor := box.size / Vector2(2300, 1600)
 	var land := Rect2(box.position + HarborData.BOUNDS.position * factor, HarborData.BOUNDS.size * factor)
-	draw_rect(land, Color("344b4a"))
+	draw_rect(land, tint(Color("344b4a"), k))
 	for building_box in HarborData.BUILDINGS:
-		draw_rect(Rect2(box.position + building_box.position * factor, building_box.size * factor), Color("677970"))
-	draw_rect(Rect2(box.position + HarborData.CANAL.position * factor, HarborData.CANAL.size * factor), INK)
+		draw_rect(Rect2(box.position + building_box.position * factor, building_box.size * factor), tint(Color("677970"), k))
+	draw_rect(Rect2(box.position + HarborData.CANAL.position * factor, HarborData.CANAL.size * factor), tint(INK, k))
 	for bridge in HarborData.BRIDGES:
-		draw_rect(Rect2(box.position + bridge.position * factor, bridge.size * factor), Color("6c7f70"))
+		draw_rect(Rect2(box.position + bridge.position * factor, bridge.size * factor), tint(Color("6c7f70"), k))
 	for i in range(3):
 		var p: Vector2 = box.position + HarborData.PUMPS[i] * factor
-		draw_circle(p, 5 if detailed else 3, MINT if campaign.pumps[i] else AMBER)
+		draw_circle(p, 5 if detailed else 3, tint(MINT if campaign.pumps[i] else AMBER, k))
 		if detailed:
 			text(p + Vector2(10, 5), "P-0%d" % (i + 1), 12, PAPER)
 		if not campaign.collected[i]:
 			var f: Vector2 = box.position + HarborData.FUSES[i] * factor
-			draw_polyline(PackedVector2Array([f + Vector2(0, -4), f + Vector2(4, 0), f + Vector2(0, 4), f + Vector2(-4, 0), f + Vector2(0, -4)]), AMBER, 1.5)
+			draw_polyline(PackedVector2Array([f + Vector2(0, -4), f + Vector2(4, 0), f + Vector2(0, 4), f + Vector2(-4, 0), f + Vector2(0, -4)]), tint(AMBER, k), 1.5)
 		if detailed:
 			var l: Vector2 = box.position + HarborData.LOGS[i] * factor
-			draw_rect(Rect2(l - Vector2(2, 3), Vector2(5, 6)), MUTED)
+			draw_rect(Rect2(l - Vector2(2, 3), Vector2(5, 6)), tint(MUTED, k))
 	for i in range(HarborData.NPC_IDS.size()):
 		var person: Vector2 = box.position + HarborData.NPC_POSITIONS[i] * factor
-		draw_circle(person, 3.5 if detailed else 2.5, Story.speaker_color(HarborData.NPC_IDS[i]))
+		draw_circle(person, 3.5 if detailed else 2.5, tint(Story.speaker_color(HarborData.NPC_IDS[i]), k))
 	var player_pos := box.position + campaign.position * factor
-	draw_circle(player_pos, 5 if detailed else 4, PAPER)
-	line(player_pos,player_pos + Vector2(-sin(campaign.look_yaw),-cos(campaign.look_yaw))*13,PAPER,2)
-	draw_arc(player_pos, 8 if detailed else 6, 0, TAU, 16, Color(PAPER, 0.3), 1)
+	draw_circle(player_pos, 5 if detailed else 4, tint(PAPER, k))
+	line(player_pos,player_pos + Vector2(-sin(campaign.look_yaw),-cos(campaign.look_yaw))*13, tint(PAPER, k), 2)
+	draw_arc(player_pos, 8 if detailed else 6, 0, TAU, 16, Color(PAPER, 0.3 * k), 1)
 	var exit_pos := box.position + HarborData.EXIT * factor
-	line(exit_pos - Vector2(4, 0), exit_pos + Vector2(4, 0), MINT, 2)
-	line(exit_pos - Vector2(0, 4), exit_pos + Vector2(0, 4), MINT, 2)
+	line(exit_pos - Vector2(4, 0), exit_pos + Vector2(4, 0), tint(PAPER, k), 2)
+	line(exit_pos - Vector2(0, 4), exit_pos + Vector2(0, 4), tint(PAPER, k), 2)
+
+func tint(c: Color, k: float) -> Color:
+	return Color(c.r, c.g, c.b, c.a * k)
 
 func compass(center: Vector2, radius: float) -> void:
 	draw_arc(center, radius, 0, TAU, 64, Color(PAPER, 0.35), 1)
@@ -451,8 +661,8 @@ func panel(box: Rect2, opacity: float = 1.0) -> void:
 	draw_rect(box, Color(INK, opacity))
 	draw_rect(box, Color(0.46, 0.59, 0.53, 0.25), false, 1)
 
-func bar(box: Rect2, amount: float, color: Color) -> void:
-	draw_rect(box, Color("344c4b"))
+func bar(box: Rect2, amount: float, color: Color, k: float = 1.0) -> void:
+	draw_rect(box, Color(PAPER, 0.16 * k) if k < 1.0 else Color("344c4b"))
 	draw_rect(Rect2(box.position, Vector2(box.size.x * amount, box.size.y)), color)
 
 func line(a: Vector2, b: Vector2, color: Color, width: float = 1.0) -> void:

@@ -353,7 +353,7 @@ func start_new() -> void:
 	ui.show_mode("playing")
 	ui.clear_radio()
 	ui.radio(Story.RADIO_INTRO)
-	ui.inform("SERA / Start with the depot fuse box. Your compass points to supplies, then pumps. [E] to use; [Tab] for the map.")
+	ui.radio([["sera", "Start with the depot fuse box. The map on Tab marks supplies, then pumps."]])
 
 func interact() -> void:
 	if ui.mode != "playing":
