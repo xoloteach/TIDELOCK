@@ -69,6 +69,7 @@ var player: Dictionary = {}
 var third_person := false
 var orbit := 2.4
 var motion: WorldMotion
+var backdrop: HarborBackdrop
 signal footstep
 signal thunder(strength: float)
 
@@ -247,11 +248,6 @@ func _ready() -> void:
 		box(self,Vector3(r.size.x/SCALE,0.6,r.size.y/SCALE),world(r.get_center(),0.3),steel)
 	for p in [Vector2(190,280),Vector2(2050,280),Vector2(190,1270),Vector2(2080,910)]:
 		model("survival/barrel",Vector3(0.6,0.9,0.6),world(p))
-	# Background silhouettes are beyond the playable seawall.
-	for i in range(7):
-		model("industrial/shipping-container-a",Vector3(3.2,1.7,1.5),Vector3(8+i*4.8,0,1.2))
-	model("industrial/water-tower",Vector3(2.5,8,2.5),Vector3(2,0,5))
-	model("industrial/chimney-large",Vector3(1.8,9,1.8),Vector3(43,0,3))
 	for i in range(3):
 		var pump := Node3D.new()
 		add_child(pump)
@@ -333,6 +329,9 @@ func _ready() -> void:
 	motion = WorldMotion.new()
 	add_child(motion)
 	motion.setup(self)
+	backdrop = HarborBackdrop.new()
+	add_child(backdrop)
+	backdrop.build(self)
 	sign_boards()
 	eyes=Camera3D.new()
 	eyes.fov=78
@@ -749,6 +748,7 @@ func update_world_effects(delta: float) -> void:
 			thunder.emit(thunder_strength)
 	flash = maxf(0.0, flash - delta * 2.6)
 	var flicker := flash * (0.6 + 0.4 * sin(elapsed * 60.0))
+	backdrop.tick(delta, flicker)
 	# Touch the sky only while lightning is visible; any change re-renders it.
 	if flicker > 0.0 or sky_flash > 0.0:
 		sky_flash = flicker
