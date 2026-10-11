@@ -400,14 +400,6 @@
     "sha256": "c94717093dd35db55b892b70ff74709ed1f515f2e13d03543603f9e4b709077b"
   },
   {
-    "path": "concrete/NormalGL.jpg",
-    "sha256": "2467fd294fe69c1dcb969d5c141eca13ac0acda9915f9b0842405f493b82cd4e"
-  },
-  {
-    "path": "concrete/Roughness.jpg",
-    "sha256": "9963905b22554fd82f7fa98e3f2280a05390184eb9d1086033949478a5164329"
-  },
-  {
     "path": "factory/License.txt",
     "sha256": "61e86565dd297e143ad631594980eda0a17fc81a4cd7c6d71acf2f5e0cad30b6"
   },
@@ -422,6 +414,38 @@
   {
     "path": "factory/crane.glb",
     "sha256": "ceaf20fb976ce0415d2b3d40e723b6ad377845818fa4fa68b55434108b1a6880"
+  },
+  {
+    "path": "ground/License.txt",
+    "sha256": "ccdaae34b2e4dc1e607e3b0e6078cac96aeb816b3c009cea1fa3f1284ef91463"
+  },
+  {
+    "path": "ground/asphalt_color.jpg",
+    "sha256": "3bf71ad290730092ad2aee85e246b2e43318bc1f32261826ba91250e815b5f72"
+  },
+  {
+    "path": "ground/asphalt_normal.jpg",
+    "sha256": "5f835d192dac296674229a763553f356f5e206bb7f6d812bca5b0f38fc5302a4"
+  },
+  {
+    "path": "ground/ground_roughness.jpg",
+    "sha256": "b4cd1ce262e618125e8fb7edfeb01c7b47ac066b6484b120df18cedf2692f9f9"
+  },
+  {
+    "path": "ground/setts_color.jpg",
+    "sha256": "ec131f7a99a1e7f9df25d4725609c55a6dad1df487630685e9a66ecbf41ec33a"
+  },
+  {
+    "path": "ground/setts_normal.jpg",
+    "sha256": "26bfff70b266a4e86983814c7e56a9b48daf93cd34dcdc16a5db13e4fabcfbb6"
+  },
+  {
+    "path": "ground/slab_color.jpg",
+    "sha256": "6db84a6d87dc50508b9d134d6fbd2b7e876b8081a5f43a118a249ca18de73af5"
+  },
+  {
+    "path": "ground/slab_normal.jpg",
+    "sha256": "fcda391b57a816d646ae15544688be53790478da5cd48dbe514b3c6901415e61"
   },
   {
     "path": "impact/License.txt",
@@ -576,6 +600,22 @@
     "sha256": "91d57a3fcc8daad1b384ba92d3059213788d36c4202367b8c128c2a794a6770c"
   },
   {
+    "path": "props/cardboard_box_01.glb",
+    "sha256": "d58553e954559c39a23e45bb7728d645b5bea31c5881905fc2bcdaf302737afa"
+  },
+  {
+    "path": "props/cardboard_box_01_cardboard_box_01_arm_1k.webp",
+    "sha256": "4ed50c90f335e1f11ef784e92257c65664ee77487013493790c3ec0a46c7bf5e"
+  },
+  {
+    "path": "props/cardboard_box_01_cardboard_box_01_diff_1k.webp",
+    "sha256": "5ce3c1eddb6916d39d57804e763f80a46b28073104eef01d38d18546e766134f"
+  },
+  {
+    "path": "props/cardboard_box_01_cardboard_box_01_nor_gl_1k.webp",
+    "sha256": "62b219d243a678818e322b1f7af6acb66b9e75018d52fadf6231cbfbbbf84acc"
+  },
+  {
     "path": "props/cement_bag.glb",
     "sha256": "a63fe9eac021825587fea82340c70915141851e4dddc14cfee81052eb24035c0"
   },
@@ -608,6 +648,22 @@
     "sha256": "49d6cfc780cb9581660aba5966447d4263b02db6f4e96c2dc035df4bd5bbdbf7"
   },
   {
+    "path": "props/compost_bags.glb",
+    "sha256": "3840e6a2f7c62128835d354af055ac6924142d14233801f98fe5d0d86eac2dec"
+  },
+  {
+    "path": "props/compost_bags_compost_bags_arm_1k.webp",
+    "sha256": "181d2d9d7f061c2e77169309de090ec0a9504625dd0c27a70b16eb9ca4eec2ae"
+  },
+  {
+    "path": "props/compost_bags_compost_bags_diff_1k.webp",
+    "sha256": "a01b1294d7b9d01da171c58c1f2094f8c6039926032ec64e2e44719c2c1c5c9f"
+  },
+  {
+    "path": "props/compost_bags_compost_bags_nor_gl_1k.webp",
+    "sha256": "7544fd31b7c22199562d3d47c0e0921d94c16c70405e029c0b1ef6ac0db4f0dd"
+  },
+  {
     "path": "props/concrete_road_barrier.glb",
     "sha256": "d87ddbff9b023b841b1663ccf7cbdc28ab71e9e1b27365bfa047d2c6511a0d99"
   },
@@ -622,6 +678,22 @@
   {
     "path": "props/concrete_road_barrier_concrete_road_barrier_nor_gl_1k.webp",
     "sha256": "11fd57b28d7abed28105be7e3eebb38ec3b726826082f8316bb1ab2a15dc6e11"
+  },
+  {
+    "path": "props/fire_hydrant.glb",
+    "sha256": "f39cc9aec2626b4b2119b3eaef6dd1d30bd33c429d2b7aa09083d15ede752ed7"
+  },
+  {
+    "path": "props/fire_hydrant_fire_hydrant_aged_arm_1k.webp",
+    "sha256": "8e15280061a236a53997880b00360bf91167b615d5287fefa9bdb72fbe3510e1"
+  },
+  {
+    "path": "props/fire_hydrant_fire_hydrant_aged_diff_1k.webp",
+    "sha256": "a456401bfa27222558e8af7f1f4f74264b1c6a21edd66ee518e27ff207c094ca"
+  },
+  {
+    "path": "props/fire_hydrant_fire_hydrant_aged_nor_gl_1k.webp",
+    "sha256": "3d6a91baef0d7c54494ab432eea3b3ff24dd09c5487d664f27c1e493af7c465e"
   },
   {
     "path": "props/hand_truck.glb",
@@ -702,6 +774,34 @@
   {
     "path": "props/metal_toolbox_metal_toolbox_nor_gl_1k.webp",
     "sha256": "a050198fe1a2226b6b9b091878eef766308af697bae2ee13b635f30387b3ff0f"
+  },
+  {
+    "path": "props/metal_trash_can.glb",
+    "sha256": "f8e9f125dc9b436f63ed3abdbb2c368988fc5c21c2cd64281fa9a707f5939c74"
+  },
+  {
+    "path": "props/metal_trash_can_metal_trash_can_arm_1k.webp",
+    "sha256": "692e879b9e6cd8b9c7416de0d20de6f7d78e2fa811c8d00980ac44657cb4d61c"
+  },
+  {
+    "path": "props/metal_trash_can_metal_trash_can_diff_1k.webp",
+    "sha256": "90ed793aa2331e5e8bd179b7cc1cf44e151fb68b90d5e402674c5d35ffb820d4"
+  },
+  {
+    "path": "props/metal_trash_can_metal_trash_can_nor_gl_1k.webp",
+    "sha256": "12bcd17505b3d00fab8999bc7b5c6e84f1b53a3428e52bc1d047ae0464a9d1d5"
+  },
+  {
+    "path": "props/metal_trash_can_metal_trash_can_rust_arm_1k.webp",
+    "sha256": "679b58d0cce9429f0d6b6e6ad799918b01e3c2eebb90c2aa20c624421538c49a"
+  },
+  {
+    "path": "props/metal_trash_can_metal_trash_can_rust_diff_1k.webp",
+    "sha256": "e35fc0425522db861c302fe4e822ccd439d78bb238835e5e229053a5acc3ac22"
+  },
+  {
+    "path": "props/metal_trash_can_metal_trash_can_rust_nor_gl_1k.webp",
+    "sha256": "edd4270e3aec17084686df1b7ec21cc2dc37b20d3a388a3beeeb2c9f49d8580b"
   },
   {
     "path": "props/modular_street_seating.glb",
@@ -856,6 +956,38 @@
     "sha256": "cfaa27d7c2b88ba5c4fdf239214d75b5d1f5147a97664f08fa84129c040bad00"
   },
   {
+    "path": "props/portable_welding_cart.glb",
+    "sha256": "f909ea66ed803d8097f9b444f342a878a3729db61443f162ed0ab9c21c71ae92"
+  },
+  {
+    "path": "props/portable_welding_cart_portable_welding_cart_arm_1k.webp",
+    "sha256": "f4f4773f49786bb6d119792c1ca7bae2699d915f15f80a0893f7b97022680a36"
+  },
+  {
+    "path": "props/portable_welding_cart_portable_welding_cart_diff_1k.webp",
+    "sha256": "adba962b322ab08634ad55ec3b50c6eb8e4de109a1f4cdcc1903c0da867730a7"
+  },
+  {
+    "path": "props/portable_welding_cart_portable_welding_cart_nor_gl_1k.webp",
+    "sha256": "2f7a77604d16d587a7262c6cf66f7027eb1d1ba172d8c9ef83ac40b8236d0dad"
+  },
+  {
+    "path": "props/power_box_01.glb",
+    "sha256": "c7640086a8f57be33978354d9d93c4d703c443060fd76b64e5e60c9bc2f4896b"
+  },
+  {
+    "path": "props/power_box_01_power_box_01_arm_1k.webp",
+    "sha256": "35ee44161aaed6aafa550f968b19f3e41c5793b83849f30f8459575f60248883"
+  },
+  {
+    "path": "props/power_box_01_power_box_01_diff_1k.webp",
+    "sha256": "1525fb731fddf9c0466cabbfb242d973c32653d1732ac2f280d1e743fb3597bc"
+  },
+  {
+    "path": "props/power_box_01_power_box_01_nor_gl_1k.webp",
+    "sha256": "8875440c76c636b107a3ca44d2646bff31acc4a335ec6e307362e6b2deed5da9"
+  },
+  {
     "path": "props/propane_tank.glb",
     "sha256": "e2377ea444af56c17889cd25c29930ff9bc70ba2a4989d84aa1d9e3d151d284d"
   },
@@ -888,6 +1020,22 @@
     "sha256": "fdc92dc07adb883d0ed19868074aca5220c2728e80475d8d17a91d78fe23e994"
   },
   {
+    "path": "props/small_lpg_tank.glb",
+    "sha256": "5c5e64776976d11af29a21379f34697573512122f73b3fa73016165ca476ea62"
+  },
+  {
+    "path": "props/small_lpg_tank_small_lpg_tank_arm_1k.webp",
+    "sha256": "15d92ead974325bda93c99dc1fcda931354200f24e5f1b89eff207c7c7a74d06"
+  },
+  {
+    "path": "props/small_lpg_tank_small_lpg_tank_diff_1k.webp",
+    "sha256": "0d41d0c1a5e15ab7bce38f2fb22a4185131d81330ade019d5b7a7392c8b7a075"
+  },
+  {
+    "path": "props/small_lpg_tank_small_lpg_tank_nor_gl_1k.webp",
+    "sha256": "9ea61ec8166b148f3f5fbcfe2d5cbe0725eee2d3da8e9164c0078fb4254d3b42"
+  },
+  {
     "path": "props/street_lamp_01.glb",
     "sha256": "eecd14ec998240dbb448888cab79da899b71b19690929aca0506147993c768fd"
   },
@@ -902,6 +1050,22 @@
   {
     "path": "props/street_lamp_01_street_lamp_01_nor_gl_1k.webp",
     "sha256": "d7fd29ffe99911dc71205a452c4dc0d2914b0b549b79e1b4773a71f3fbd1f7cb"
+  },
+  {
+    "path": "props/tool_cart.glb",
+    "sha256": "090ad3998766100750b2d2e998fa4402114b90155fd929cf408e6e4c43ec0f0a"
+  },
+  {
+    "path": "props/tool_cart_tool_cart_arm_1k.webp",
+    "sha256": "94fdce5c356af219341582215f7513836510fc399ac233914bb65ed810502a05"
+  },
+  {
+    "path": "props/tool_cart_tool_cart_diff_1k.webp",
+    "sha256": "40c991ed66824ac1b0e05758282e80bd3afcecc84168c45b09a8ec246fb51827"
+  },
+  {
+    "path": "props/tool_cart_tool_cart_nor_gl_1k.webp",
+    "sha256": "c3ee95339af7f877c1a170c35d78a78ff6a2a89e837e5e4bb3147db262289397"
   },
   {
     "path": "props/trashbag.glb",
@@ -936,6 +1100,38 @@
     "sha256": "720a6ffdd9a7f43ff5954576f625dc21a1f2e3d0370902a32f4769388234fd04"
   },
   {
+    "path": "props/utility_box_02.glb",
+    "sha256": "1369174f337ee036d32b8e89e54b9c0f77f98364af365b9354d492aea69c2d16"
+  },
+  {
+    "path": "props/utility_box_02_utility_box_02_arm_1k.webp",
+    "sha256": "45d51f0abde4d56dfd2f93c08dbde2b87d93cd8fab75bebad56ca6e7d8ce2d1e"
+  },
+  {
+    "path": "props/utility_box_02_utility_box_02_diff_1k.webp",
+    "sha256": "692ee94e8b01e1bc6fba49992bde5177097f6187b42b143222ff426da804fad8"
+  },
+  {
+    "path": "props/utility_box_02_utility_box_02_nor_gl_1k.webp",
+    "sha256": "91fdfe9bd50cac5fb00655d4a31130e00e48a90c4347a85d6fee1f2f9ed80d1f"
+  },
+  {
+    "path": "props/wooden_crate_01.glb",
+    "sha256": "dfdd8431bf23352156f9f04bc5d089d1145ae779da110aa87f1af498a6c7d230"
+  },
+  {
+    "path": "props/wooden_crate_01_wooden_crate_01_arm_1k.webp",
+    "sha256": "1bf0be34411fc18e988965c9b65d6dc2a838125a93db02eb55c194d827418aa1"
+  },
+  {
+    "path": "props/wooden_crate_01_wooden_crate_01_diff_1k.webp",
+    "sha256": "5a039b2b0884dfe6415c1ce50fcb2180bf6eb9657a907295274153e4291362a2"
+  },
+  {
+    "path": "props/wooden_crate_01_wooden_crate_01_nor_gl_1k.webp",
+    "sha256": "1a0ea2976a9315512b4c6d9deb77ee54eb901d65ef9368d7e7442297aaee04b2"
+  },
+  {
     "path": "props/wooden_crate_02.glb",
     "sha256": "c8b939b0fec53c7fd4513b780950c17f879b4cacda1a4be5f4b7f0da906080ac"
   },
@@ -950,6 +1146,22 @@
   {
     "path": "props/wooden_crate_02_wooden_crate_02_nor_gl_1k.webp",
     "sha256": "f93c127bb814f6d04d04d74ad6d208b7104c988036c36b61be5047a5315f24c0"
+  },
+  {
+    "path": "props/worn_metal_rack.glb",
+    "sha256": "4c7f659d9741f6644655965cc54154c88c1d3cf34a4d5ab7f870ff385ccc86be"
+  },
+  {
+    "path": "props/worn_metal_rack_worn_metal_rack_arm_1k.webp",
+    "sha256": "2b607905d367b4faad358d67483e973c4dbe0bb1db55f0ca39d5f959a6ab8711"
+  },
+  {
+    "path": "props/worn_metal_rack_worn_metal_rack_diff_1k.webp",
+    "sha256": "8bd88632b581c75c976272918154d47ab3f91697b2565951ff23cd4880993fe3"
+  },
+  {
+    "path": "props/worn_metal_rack_worn_metal_rack_nor_gl_1k.webp",
+    "sha256": "c3bae7e9dbbfe3ade5eb7b28d193246bb15039088e7110b6c9c05e038ad6f511"
   },
   {
     "path": "roads/License.txt",

@@ -24,13 +24,25 @@ PROPS = {
     "modular_street_seating": (6000, 512), "hand_truck": (4000, 256),
     "clipboard": (1500, 256), "ocean_buoy": (2500, 512),
     "street_lamp_01": (1200, 512), "concrete_road_barrier": (400, 512), "cement_bag": (150, 256), "wooden_crate_02": (800, 512),
+    "fire_hydrant": (1500, 256), "metal_trash_can": (1500, 256), "cardboard_box_01": (600, 256),
+    "utility_box_02": (1200, 256), "power_box_01": (2000, 256),
+    "small_lpg_tank": (1500, 256), "portable_welding_cart": (3000, 512), "compost_bags": (2500, 512),
+    "worn_metal_rack": (1500, 256), "tool_cart": (3000, 512), "wooden_crate_01": (800, 512),
 }
+
+# Variant to keep, by object-name fragment, for files that ship more than one.
+VARIANT = {"fire_hydrant": "aged"}
 
 
 def build(name, faces, texture):
     bpy.ops.wm.read_factory_settings(use_empty=True)
     bpy.ops.import_scene.gltf(filepath=str(CACHE / "polyhaven" / name / f"{name}.gltf"), merge_vertices=True)
     meshes = [o for o in bpy.data.objects if o.type == "MESH"]
+    # Some Poly Haven files hold several variants side by side; keep just one.
+    if name in VARIANT:
+        for obj in [o for o in meshes if VARIANT[name] not in o.name]:
+            bpy.data.objects.remove(obj)
+        meshes = [o for o in bpy.data.objects if o.type == "MESH"]
     bpy.ops.object.select_all(action="DESELECT")
     for obj in meshes:
         obj.select_set(True)
@@ -45,13 +57,19 @@ def build(name, faces, texture):
         decimate.ratio = faces / count
         decimate.use_collapse_triangulate = True
         bpy.ops.object.modifier_apply(modifier="Decimate")
-    # Godot ignores specular maps, and some fail to re-encode; unlink them.
+    # Godot ignores specular and subsurface maps, and some fail to re-encode; unlink them.
     for mat in bpy.data.materials:
         if mat.node_tree:
             for link in list(mat.node_tree.links):
-                if link.to_socket.name.startswith("Specular"):
+                if link.to_socket.name.startswith(("Specular", "Subsurface")):
                     mat.node_tree.links.remove(link)
+            # Drop the image nodes that unlinking left dangling, so they are not exported.
+            for node in list(mat.node_tree.nodes):
+                if node.type == "TEX_IMAGE" and not any(output.links for output in node.outputs):
+                    mat.node_tree.nodes.remove(node)
     for image in bpy.data.images:
+        if image.users == 0:
+            continue
         # Packed AO/roughness/metal maps tolerate half the resolution of colour.
         limit = max(128, texture // 2) if "_arm_" in image.name else texture
         if image.size[0] > limit:
@@ -64,5 +82,8 @@ def build(name, faces, texture):
     print(f"BUILT {name}: {target.stat().st_size // 1024} KB, {len(obj.data.polygons)} faces, size {size}")
 
 
+# Optional third argument: a comma-separated subset of props to rebuild.
+only = sys.argv[sys.argv.index("--") + 1:][2:3]
 for prop, (budget, pixels) in PROPS.items():
-    build(prop, budget, pixels)
+    if not only or prop in only[0].split(","):
+        build(prop, budget, pixels)

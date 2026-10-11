@@ -194,9 +194,10 @@ func _ready() -> void:
 	add_child(sun)
 	var concrete := ShaderMaterial.new()
 	concrete.shader = preload("res://shaders/wet_quay.gdshader")
-	concrete.set_shader_parameter("concrete_color",preload("res://assets/concrete/Color.jpg"))
-	concrete.set_shader_parameter("concrete_normal",preload("res://assets/concrete/NormalGL.jpg"))
-	concrete.set_shader_parameter("concrete_roughness",preload("res://assets/concrete/Roughness.jpg"))
+	for part in ["slab", "setts", "asphalt"]:
+		concrete.set_shader_parameter(part + "_color", load("res://assets/ground/%s_color.jpg" % part))
+		concrete.set_shader_parameter(part + "_normal", load("res://assets/ground/%s_normal.jpg" % part))
+	concrete.set_shader_parameter("roughness_pack", preload("res://assets/ground/ground_roughness.jpg"))
 	amber_material = material(Color("dda94c"),1)
 	green_material = material(Color("77dbc1"),1)
 	var steel := material(Color("344c55"))

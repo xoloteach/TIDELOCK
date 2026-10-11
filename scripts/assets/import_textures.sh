@@ -15,7 +15,7 @@ for glb in godot/assets/characters/*.glb godot/assets/props/*.glb; do
 done
 rm -rf godot/.godot
 "$GODOT_BIN" --headless --path godot --editor --import >/dev/null 2>&1
-for texture in godot/assets/characters/*.webp.import godot/assets/props/*.webp.import; do
+for texture in godot/assets/characters/*.webp.import godot/assets/props/*.webp.import godot/assets/ground/*.jpg.import; do
   sed -i -e 's/^compress\/mode=.*/compress\/mode=1/' -e 's/^compress\/lossy_quality=.*/compress\/lossy_quality=0.8/' \
     -e 's/^detect_3d\/compress_to=.*/detect_3d\/compress_to=0/' -e 's/^mipmaps\/generate=.*/mipmaps\/generate=true/' "$texture"
 done

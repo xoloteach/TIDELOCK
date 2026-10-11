@@ -2,28 +2,31 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c58uu6e7cyn5r"
-path="res://.godot/imported/Roughness.jpg-a469462d489733254eea9b328f57f26f.ctex"
+uid="uid://c4rgfnn8g0b8d"
+path="res://.godot/imported/metal_trash_can_metal_trash_can_arm_1k.webp-50c7825f54cd56df8b2c646cb5c13f91.ctex"
 metadata={
 "vram_texture": false
+}
+generator_parameters={
+"md5": "3649f695ef3d4c55f0eb99a117b5e257"
 }
 
 [deps]
 
-source_file="res://assets/concrete/Roughness.jpg"
-dest_files=["res://.godot/imported/Roughness.jpg-a469462d489733254eea9b328f57f26f.ctex"]
+source_file="res://assets/props/metal_trash_can_metal_trash_can_arm_1k.webp"
+dest_files=["res://.godot/imported/metal_trash_can_metal_trash_can_arm_1k.webp-50c7825f54cd56df8b2c646cb5c13f91.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=1
 compress/high_quality=false
-compress/lossy_quality=0.7
+compress/lossy_quality=0.8
 compress/uastc_level=0
 compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=false
+mipmaps/generate=true
 mipmaps/limit=-1
 roughness/mode=0
 roughness/src_normal=""
@@ -37,4 +40,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=1
+detect_3d/compress_to=0

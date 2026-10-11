@@ -1,0 +1,3 @@
+Ground textures: Poly Haven (https://polyhaven.com) concrete_floor_02, cobblestone_floor_08, worn_asphalt.
+License: CC0 1.0 Universal (public domain dedication)
+https://polyhaven.com/license

@@ -16,6 +16,9 @@ POLYHAVEN_MODELS = [
     "security_light", "trashbag", "propane_tank", "modular_street_seating",
     "hand_truck", "clipboard", "ocean_buoy",
     "street_lamp_01", "concrete_road_barrier", "cement_bag", "wooden_crate_02",
+    "fire_hydrant", "metal_trash_can", "cardboard_box_01",
+    "utility_box_02", "power_box_01", "small_lpg_tank", "portable_welding_cart",
+    "compost_bags", "worn_metal_rack", "tool_cart", "wooden_crate_01",
 ]
 POLYHAVEN_HDRI = "abandoned_slipway"
 QUATERNIUS = {

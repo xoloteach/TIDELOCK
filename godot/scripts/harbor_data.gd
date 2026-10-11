@@ -74,6 +74,21 @@ const PROPS := [
 	# A delivery that never got moved: a crate on the pallet stack and one beside it.
 	["wooden_crate_02", Vector2(947, 198), 98.0, 0.72, Vector2.ZERO],
 	["plastic_crate_03", Vector2(960, 228), -20.0, 0.0, Vector2.ZERO],
+	# Everyday clutter against the walls: bins, stores, gas, a hydrant and a rack of kit.
+	["fire_hydrant", Vector2(1060, 652), 0.0, 0.0, Vector2(26, 26)],
+	["metal_trash_can", Vector2(1200, 1137), 0.0, 0.0, Vector2(92, 32)],
+	["cardboard_box_01", Vector2(836, 428), 12.0, 0.0, Vector2.ZERO],
+	["cardboard_box_01", Vector2(837, 454), -8.0, 0.0, Vector2.ZERO],
+	["cardboard_box_01", Vector2(836, 441), 30.0, 0.52, Vector2(28, 62)],
+	["utility_box_02", Vector2(1900, 523), 0.0, 0.0, Vector2(48, 24)],
+	["power_box_01", Vector2(1760, 866), 0.0, 1.05, Vector2.ZERO],
+	["small_lpg_tank", Vector2(256, 470), 0.0, 0.0, Vector2(22, 22)],
+	["small_lpg_tank", Vector2(257, 494), 40.0, 0.0, Vector2(22, 22)],
+	["portable_welding_cart", Vector2(900, 778), 10.0, 0.0, Vector2(46, 36)],
+	["compost_bags", Vector2(735, 1012), 0.0, 0.0, Vector2(94, 48)],
+	["worn_metal_rack", Vector2(906, 960), 90.0, 0.0, Vector2(32, 48)],
+	["tool_cart", Vector2(1800, 531), 0.0, 0.0, Vector2(66, 40)],
+	["wooden_crate_01", Vector2(1146, 260), 90.0, 0.0, Vector2(24, 44)],
 ]
 # Kenney set pieces: [res path under assets/, centre, yaw degrees, fitted size m, solid footprint u].
 const SET_PIECES := [

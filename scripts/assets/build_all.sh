@@ -16,6 +16,7 @@ trap 'rm -rf "$work"' EXIT
 bash scripts/assets/build_audio.sh "$cache" "$work/audio"
 mkdir -p "$work/sky" && bash scripts/assets/build_sky.sh "$cache" "$work/sky"
 bash scripts/assets/build_kenney.sh "$cache" godot/assets
+python3 -I scripts/assets/build_ground.py "$cache" godot/assets/ground
 for kind in characters props audio sky; do
   mkdir -p "godot/assets/$kind"
   find "godot/assets/$kind" -maxdepth 1 -type f ! -name '*.import' ! -name License.txt -delete
