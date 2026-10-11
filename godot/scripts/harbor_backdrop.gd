@@ -122,9 +122,14 @@ func atlas_material(key: String) -> Material:
 		skyline_mat.shader = preload("res://shaders/skyline.gdshader")
 		skyline_mat.set_shader_parameter("palette", tex)
 		return skyline_mat
+	if not view.low_quality:
+		var worn := ShaderMaterial.new()
+		worn.shader = preload("res://shaders/weathered.gdshader")
+		worn.set_shader_parameter("palette", tex)
+		return worn
 	var m := StandardMaterial3D.new()
 	m.albedo_texture = tex
-	m.albedo_color = Color(0.7, 0.74, 0.76)   # storm-dull the Kenney palette
+	m.albedo_color = Color(0.6, 0.64, 0.66)   # storm-dull the Kenney palette
 	m.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
 	m.roughness = 0.85
 	m.shading_mode = BaseMaterial3D.SHADING_MODE_PER_VERTEX
